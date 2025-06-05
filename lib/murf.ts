@@ -6,11 +6,10 @@ export class MurfService {
   private apiKey: string;
   private baseUrl = 'https://api.murf.ai/v1';
 
-  // Voice IDs for different characters
   private voiceMap = {
-  'jane': 'en-US-julia',    // Valid voice ID
-  'mike': 'en-US-terrell',  // Valid voice ID for male
-  'sarah': 'en-US-emma',   // Valid voice ID
+  'jane': 'en-US-julia',  
+  'mike': 'en-US-terrell', 
+  'sarah': 'en-US-emma',   
 };
 
 
@@ -31,22 +30,19 @@ export class MurfService {
       const voiceId = this.voiceMap[characterId as keyof typeof this.voiceMap] || 'claire';
       console.log('🎙️ Selected voice ID:', voiceId);
       
-      // Customize voice parameters based on character
       let speed = 1.0;
       let pitch = 1.0;
 
-      // Adjust parameters for each character
       switch(characterId) {
         case 'mike':
-          speed = 0.95; // Slightly slower for HR, more empathetic
-          pitch = 0.95; // Slightly lower pitch for authority
+          speed = 0.95; 
+          pitch = 0.95; 
           break;
         case 'sarah':
-          speed = 1.05; // Slightly faster for dynamic PM style
-          pitch = 1.1; // Higher pitch for energy
+          speed = 1.05; 
+          pitch = 1.1; 
           break;
         default:
-          // Default parameters for Jane (Tech Lead)
           speed = 1.0;
           pitch = 1.0;
       }
@@ -94,7 +90,7 @@ export class MurfService {
       const data = await response.json();
       console.log('✅ Audio generated successfully:', data);
 
-      return data.audioFile; // Return the audio URL directly
+      return data.audioFile; 
     } catch (error) {
       console.error('❌ Error generating speech:', error);
       throw error;
