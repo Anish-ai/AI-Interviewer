@@ -25,9 +25,10 @@ export function VideoCapture({
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: 640,
-          height: 480,
+          width: 320,
+          height: 240,
           facingMode: 'user',
+          frameRate: { ideal: 15, max: 20 }
         },
       });
 
@@ -64,11 +65,20 @@ export function VideoCapture({
   // Process video frames
   useEffect(() => {
     let animationFrameId: number;
+    let lastProcessTime = 0;
+    const FRAME_INTERVAL = 1000 / 10;
 
     const processFrame = async () => {
       if (!isStreaming || !videoRef.current || !canvasRef.current || !isModelLoaded) {
         return;
       }
+
+      const now = performance.now();
+      if (now - lastProcessTime < FRAME_INTERVAL) {
+        animationFrameId = requestAnimationFrame(processFrame);
+        return;
+      }
+      lastProcessTime = now;
 
       try {
         const metrics = await detectFace(videoRef.current);
@@ -116,11 +126,13 @@ export function VideoCapture({
               ctx.fill();
             }
 
-            // Print progress to terminal
-            console.log(`🎭 Expression: ${dominantExpression} (${emoji})`);
-            console.log(`👁️ Eye Contact: ${metrics.eyeContact ? '✅' : '❌'}`);
-            console.log(`🎯 Confidence: ${Math.round(metrics.confidence * 100)}%`);
-            console.log('----------------------------------------');
+            // Print progress to terminal (only when significant changes occur)
+            if (metrics.confidence > 0.7) {
+              console.log(`🎭 Expression: ${dominantExpression} (${emoji})`);
+              console.log(`👁️ Eye Contact: ${metrics.eyeContact ? '✅' : '❌'}`);
+              console.log(`🎯 Confidence: ${Math.round(metrics.confidence * 100)}%`);
+              console.log('----------------------------------------');
+            }
           }
         }
       } catch (err) {
@@ -163,8 +175,8 @@ export function VideoCapture({
         <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full"
-          width={640}
-          height={480}
+          width={320}
+          height={240}
         />
         {!isModelLoaded && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white">

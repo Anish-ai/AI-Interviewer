@@ -344,54 +344,54 @@ export default function MockInterviewAI() {
           setMessages((prev) => [...prev, aiMessage]);
           setCurrentQuestion((prev) => prev + 1);
 
-          if (currentQuestion >= 5) {
-            // Generate final feedback using Gemini
-            const feedbackPrompt = `As ${selectedCharacter.name}, a ${selectedCharacter.role}, provide a comprehensive interview feedback based on the candidate's responses.
-            Include:
-            1. Overall score (out of 10)
-            2. Key strengths (3 points)
-            3. Areas for improvement (3 points)
-            4. Interview duration
-            5. Number of questions answered
+          // if (currentQuestion >= 5) {
+          //   // Generate final feedback using Gemini
+          //   const feedbackPrompt = `As ${selectedCharacter.name}, a ${selectedCharacter.role}, provide a comprehensive interview feedback based on the candidate's responses.
+          //   Include:
+          //   1. Overall score (out of 10)
+          //   2. Key strengths (3 points)
+          //   3. Areas for improvement (3 points)
+          //   4. Interview duration
+          //   5. Number of questions answered
             
-            Format the response as a JSON object with these fields:
-            {
-              "score": number,
-              "strengths": string[],
-              "improvements": string[],
-              "duration": string,
-              "questionsAnswered": number
-            }`;
+          //   Format the response as a JSON object with these fields:
+          //   {
+          //     "score": number,
+          //     "strengths": string[],
+          //     "improvements": string[],
+          //     "duration": string,
+          //     "questionsAnswered": number
+          //   }`;
 
-            const feedbackResponse = await fetch("/api/process-message", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                message: feedbackPrompt,
-                character: selectedCharacter,
-                interviewType: selectedType,
-                isFeedback: true,
-                language: selectedLanguage,
-              }),
-            });
+          //   const feedbackResponse = await fetch("/api/process-message", {
+          //     method: "POST",
+          //     headers: {
+          //       "Content-Type": "application/json",
+          //     },
+          //     body: JSON.stringify({
+          //       message: feedbackPrompt,
+          //       character: selectedCharacter,
+          //       interviewType: selectedType,
+          //       isFeedback: true,
+          //       language: selectedLanguage,
+          //     }),
+          //   });
 
-            const feedbackData = await feedbackResponse.json();
+          //   const feedbackData = await feedbackResponse.json();
 
-            if (feedbackData.success) {
-              try {
-                const cleaned = feedbackData.processedMessage
-                  .replace(/```json|```/g, "")
-                  .trim();
-                const feedback = JSON.parse(cleaned);
-                setSessionData(feedback);
-                setSessionComplete(true);
-              } catch (error) {
-                console.error("Error parsing feedback:", error);
-              }
-            }
-          }
+          //   if (feedbackData.success) {
+          //     try {
+          //       const cleaned = feedbackData.processedMessage
+          //         .replace(/```json|```/g, "")
+          //         .trim();
+          //       const feedback = JSON.parse(cleaned);
+          //       setSessionData(feedback);
+          //       setSessionComplete(true);
+          //     } catch (error) {
+          //       console.error("Error parsing feedback:", error);
+          //     }
+          //   }
+          // }
         } catch (error) {
           console.error("Error parsing response:", error);
         }
@@ -516,6 +516,16 @@ export default function MockInterviewAI() {
               setCurrentQuestion(1);
               setInterviewStarted(false);
             }}
+            onNewInterview={() => {
+              setMessages([]);
+              setCurrentQuestion(1);
+              setInterviewStarted(false);
+            }}
+            onViewHistory={() => {
+              // You can implement a modal or navigation to view chatHistory if needed
+              // For now, just log it
+              console.log(chatHistory);
+            }}
             messages={messages}
           />
           <div className="flex-1 flex flex-col items-center justify-center">
@@ -572,6 +582,16 @@ export default function MockInterviewAI() {
             setMessages([]);
             setCurrentQuestion(1);
             setInterviewStarted(false);
+          }}
+          onNewInterview={() => {
+            setMessages([]);
+            setCurrentQuestion(1);
+            setInterviewStarted(false);
+          }}
+          onViewHistory={() => {
+            // You can implement a modal or navigation to view chatHistory if needed
+            // For now, just log it
+            console.log(chatHistory);
           }}
           messages={messages}
         />

@@ -62,8 +62,14 @@ export function useFaceDetection() {
     }
 
     try {
+      // Use optimized detection options
+      const options = new faceapi.TinyFaceDetectorOptions({
+        inputSize: 224, // Reduced from default
+        scoreThreshold: 0.5 // Increased threshold for better performance
+      });
+
       const detections = await faceapi
-        .detectAllFaces(videoElement, new faceapi.TinyFaceDetectorOptions())
+        .detectAllFaces(videoElement, options)
         .withFaceLandmarks()
         .withFaceExpressions();
 
@@ -84,15 +90,20 @@ export function useFaceDetection() {
       // Calculate confidence based on detection score and expression confidence
       const confidence = calculateConfidence(face.detection.score, expressions);
 
-      const metrics = {
-        expressions,
-        eyeContact,
-        headPosition,
-        confidence,
-      };
+      // Only update metrics if confidence is high enough
+      if (confidence > 0.5) {
+        const metrics = {
+          expressions,
+          eyeContact,
+          headPosition,
+          confidence,
+        };
 
-      setFaceMetrics(metrics);
-      return metrics;
+        setFaceMetrics(metrics);
+        return metrics;
+      }
+
+      return null;
     } catch (err) {
       console.error('Error detecting face:', err);
       return null;

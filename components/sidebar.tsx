@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight, History, Settings } from "lucide-react";
+import { ChevronLeft, ChevronRight, History, Settings, Users, List, Check, Plus } from "lucide-react";
 import type { Character, InterviewType } from "@/types";
 import { useState } from "react";
 import {
@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Sun, Moon } from "lucide-react";
 
 interface SidebarProps {
   characters: Character[];
@@ -23,6 +24,8 @@ interface SidebarProps {
   onToggleCollapse: () => void;
   onResetInterview: () => void;
   messages?: any[];
+  onNewInterview: () => void;
+  onViewHistory: () => void;
 }
 
 export function Sidebar({
@@ -36,188 +39,234 @@ export function Sidebar({
   onToggleCollapse,
   onResetInterview,
   messages = [],
+  onNewInterview,
+  onViewHistory,
 }: SidebarProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [theme, setTheme] = useState("light");
+  const [language, setLanguage] = useState("en");
+
+  const isOpen = !collapsed;
 
   return (
     <div
-      className={`fixed top-0 left-0 h-screen bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-r border-gray-200/50 dark:border-gray-700/50 transition-all duration-300 ${
-        collapsed ? "w-16" : "w-80"
+      className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-50 ${
+        isOpen ? "w-80" : "w-16"
       }`}
     >
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onToggleCollapse}
-        className="absolute -right-3 top-4 z-10 w-6 h-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-sm"
-      >
-        {collapsed ? (
-          <ChevronRight className="w-3 h-3" />
-        ) : (
-          <ChevronLeft className="w-3 h-3" />
-        )}
-      </Button>
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            {isOpen && (
+              <h1 className="text-xl font-bold text-[#56707F]">MockInterviewAI</h1>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onToggleCollapse()}
+              className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+            >
+              {isOpen ? (
+                <ChevronLeft className="w-5 h-5 text-[#56707F]" />
+              ) : (
+                <ChevronRight className="w-5 h-5 text-[#56707F]" />
+              )}
+            </Button>
+          </div>
+        </div>
 
-      <ScrollArea className="h-full p-4">
-        {!collapsed ? (
-          <div className="space-y-6">
+        {/* Content */}
+        <ScrollArea className="flex-1">
+          <div className="p-4 space-y-6">
+            {/* Characters Section */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                Select Interviewer
-              </h3>
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="w-5 h-5 text-[#56707F]" />
+                {isOpen && (
+                  <h2 className="text-sm font-semibold text-[#56707F]">
+                    Interviewers
+                  </h2>
+                )}
+              </div>
               <div className="space-y-2">
                 {characters.map((character) => (
                   <button
                     key={character.id}
                     onClick={() => onCharacterSelect(character)}
-                    className={`w-full p-3 rounded-lg border-2 transition-all duration-200 text-left ${
+                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all duration-200 ${
                       selectedCharacter?.id === character.id
-                        ? "border-[#56707F] bg-[#56707F]/5 scale-105"
-                        : "border-gray-200 dark:border-gray-700 hover:border-[#56707F]/50 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                        ? "bg-[#E07A5F]/10 text-[#E07A5F]"
+                        : "hover:bg-gray-100 dark:hover:bg-gray-700"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="relative">
                       <img
-                        src={
-                          character.avatarAnimated ||
-                          character.avatar ||
-                          "/placeholder.svg"
-                        }
+                        src={character.avatarAnimated || character.avatar}
                         alt={character.name}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-[#E07A5F] bg-white"
-                        style={{ background: "#fff" }}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-[#E07A5F] bg-white shadow-sm"
                       />
-                      <div>
+                      {selectedCharacter?.id === character.id && (
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#E07A5F] rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    {isOpen && (
+                      <div className="flex-1 text-left">
                         <div className="font-medium text-gray-900 dark:text-white">
                           {character.name}
                         </div>
-                        <div className="text-sm text-[#56707F]">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           {character.role}
                         </div>
                       </div>
-                    </div>
+                    )}
                   </button>
                 ))}
               </div>
             </div>
 
+            {/* Interview Types Section */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                Interview Types
-              </h3>
+              <div className="flex items-center gap-2 mb-4">
+                <List className="w-5 h-5 text-[#56707F]" />
+                {isOpen && (
+                  <h2 className="text-sm font-semibold text-[#56707F]">
+                    Interview Types
+                  </h2>
+                )}
+              </div>
               <div className="space-y-2">
                 {interviewTypes.map((type) => (
                   <button
                     key={type.id}
                     onClick={() => onTypeSelect(type)}
-                    className={`w-full p-3 rounded-lg border-2 transition-all duration-200 text-left ${
+                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all duration-200 ${
                       selectedType?.id === type.id
-                        ? "border-[#E07A5F] bg-[#E07A5F]/5 scale-105"
-                        : "border-gray-200 dark:border-gray-700 hover:border-[#E07A5F]/50 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                        ? "bg-[#E07A5F]/10 text-[#E07A5F]"
+                        : "hover:bg-gray-100 dark:hover:bg-gray-700"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{type.icon}</span>
-                      <div>
+                    <div className="w-10 h-10 rounded-lg bg-[#56707F]/10 flex items-center justify-center">
+                      {type.icon}
+                    </div>
+                    {isOpen && (
+                      <div className="flex-1 text-left">
                         <div className="font-medium text-gray-900 dark:text-white">
                           {type.name}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           {type.description}
                         </div>
                       </div>
-                    </div>
+                    )}
                   </button>
                 ))}
               </div>
             </div>
-
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-3"
-                onClick={() => setHistoryOpen(true)}
-              >
-                <History className="w-4 h-4" />
-                Session History
-              </Button>
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-3 mt-1"
-                onClick={onResetInterview}
-              >
-                <span className="w-4 h-4">🔄</span>
-                Reset Interview
-              </Button>
-            </div>
           </div>
-        ) : (
-          <div className="flex flex-col items-center gap-4">
-            {characters.map((character) => (
+        </ScrollArea>
+
+        {/* Footer */}
+        <div className="flex-none p-4 border-t border-gray-200/50 dark:border-gray-700/50">
+          {isOpen && (
+            <div className="flex flex-col gap-3">
+              <Button
+                onClick={onNewInterview}
+                className="w-full bg-[#E07A5F] hover:bg-[#E07A5F]/90 text-white shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Interview
+              </Button>
+              <Button
+                onClick={onViewHistory}
+                variant="outline"
+                className="w-full border-gray-200 dark:border-gray-700 hover:border-[#E07A5F]/50 shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                <History className="w-4 h-4 mr-2" />
+                View History
+              </Button>
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <span>AI Ready</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Settings Modal */}
+      {settingsOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-96 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Settings
+              </h3>
               <button
-                key={character.id}
-                onClick={() => onCharacterSelect(character)}
-                className={`w-12 h-12 rounded-full border-2 transition-all duration-200 ${
-                  selectedCharacter?.id === character.id
-                    ? "border-[#56707F] scale-110"
-                    : "border-gray-200 dark:border-gray-700 hover:border-[#56707F]/50"
-                }`}
+                onClick={() => setSettingsOpen(false)}
+                className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors duration-200"
               >
-                <img
-                  src={
-                    character.avatarAnimated ||
-                    character.avatar ||
-                    "/placeholder.svg"
-                  }
-                  alt={character.name}
-                  className="w-full h-full rounded-full object-cover"
-                />
+                ✕
               </button>
-            ))}
-            <div className="w-full h-px bg-gray-200 dark:bg-gray-700 my-2" />
-            <Button variant="ghost" size="icon">
-              <History className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Settings className="w-4 h-4" />
-            </Button>
-          </div>
-        )}
-      </ScrollArea>
-
-      {historyOpen && (
-        <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
-          <DialogContent className="max-w-xl w-full bg-white dark:bg-gray-800">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-bold text-gray-900 dark:text-white">
-                Session Chat History
-              </DialogTitle>
-            </DialogHeader>
-            <div className="max-h-[60vh] overflow-y-auto space-y-4 mt-2">
-              {messages.length === 0 ? (
-                <div className="text-gray-500 dark:text-gray-300 text-center">
-                  No chat history yet.
-                </div>
-              ) : (
-                messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 rounded-lg border bg-gray-50 dark:bg-gray-900/40"
-                  >
-                    <div className="text-xs text-gray-500 mb-1">
-                      {msg.type === "user"
-                        ? "You"
-                        : msg.character?.name || "Interviewer"}
-                    </div>
-                    <div className="text-gray-900 dark:text-white whitespace-pre-line">
-                      {msg.content}
-                    </div>
-                  </div>
-                ))
-              )}
             </div>
-          </DialogContent>
-        </Dialog>
+
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">
+                  Theme
+                </h4>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setTheme("light")}
+                    className={`flex-1 p-3 rounded-lg border-2 transition-all duration-200 ${
+                      theme === "light"
+                        ? "border-[#E07A5F] bg-[#E07A5F]/5"
+                        : "border-gray-200 dark:border-gray-700 hover:border-[#E07A5F]/50"
+                    }`}
+                  >
+                    <Sun className="w-5 h-5 mx-auto mb-2 text-gray-700 dark:text-gray-200" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Light
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setTheme("dark")}
+                    className={`flex-1 p-3 rounded-lg border-2 transition-all duration-200 ${
+                      theme === "dark"
+                        ? "border-[#E07A5F] bg-[#E07A5F]/5"
+                        : "border-gray-200 dark:border-gray-700 hover:border-[#E07A5F]/50"
+                    }`}
+                  >
+                    <Moon className="w-5 h-5 mx-auto mb-2 text-gray-700 dark:text-gray-200" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      Dark
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">
+                  Language
+                </h4>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="w-full p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
+                >
+                  <option value="en">English</option>
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                  <option value="de">German</option>
+                  <option value="zh">Chinese</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
