@@ -21,6 +21,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { VideoCapture } from "@/components/video-capture";
+import type { FaceMetrics } from "@/lib/hooks/useFaceDetection";
 
 interface ChatCanvasProps {
   messages: Message[];
@@ -33,6 +35,7 @@ interface ChatCanvasProps {
   totalQuestions: number;
   sidebarCollapsed: boolean;
   onAnalysis: () => void;
+  onFaceMetricsUpdate?: (metrics: FaceMetrics) => void;
 }
 
 export function ChatCanvas({
@@ -46,6 +49,7 @@ export function ChatCanvas({
   totalQuestions,
   sidebarCollapsed,
   onAnalysis,
+  onFaceMetricsUpdate,
 }: ChatCanvasProps) {
   const [transcript, setTranscript] = useState("");
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -179,7 +183,7 @@ export function ChatCanvas({
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-gradient-to-br from-white/30 to-gray-50/30 dark:from-gray-800/30 dark:to-gray-900/30">
+    <div className="flex-1 flex flex-col bg-gradient-to-br from-white/30 to-gray-50/30 dark:from-gray-800/30 dark:to-gray-900/30 ml-16 md:ml-80">
       {/* Chat Header */}
       <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
         <div className="flex items-center justify-between">
@@ -225,127 +229,122 @@ export function ChatCanvas({
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center p-8 bg-white/50 dark:bg-gray-800/50 rounded-2xl backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
-              <div className="w-16 h-16 bg-[#E07A5F] rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mic className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                Welcome to MockInterviewAI!
-              </h3>
-              <p className="text-gray-500 mb-4">
-                Select a character and interview type to begin your practice
-                session. Introduce yourself to start the interview.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.type === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
+      <div className="flex-1 flex">
+        <div className="flex-1 flex flex-col">
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-4">
+              {messages.map((message) => (
                 <div
-                  className={`max-w-[80%] rounded-2xl p-4 shadow-sm backdrop-blur-sm border ${
-                    message.type === "user"
-                      ? "bg-[#FFF5F3] border-[#E07A5F]/20 ml-auto"
-                      : "bg-white/80 dark:bg-gray-800/80 border-gray-200/50 dark:border-gray-700/50"
+                  key={message.id}
+                  className={`flex ${
+                    message.type === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
-                  {message.type === "interviewer" && message.character && (
-                    <div className="flex items-center gap-3 mb-2">
-                      <img
-                        src={
-                          message.character.avatarAnimated ||
-                          message.character.avatar ||
-                          "/placeholder.svg"
-                        }
-                        alt={message.character.name}
-                        className="w-8 h-8 rounded-full object-cover border-2 border-[#E07A5F] bg-white"
-                        style={{ background: "#fff" }}
-                      />
-                      <span className="font-medium text-[#56707F]">
-                        {message.character.name}
-                      </span>
-                      {message.mood && (
-                        <div className="flex items-center gap-2 ml-auto">
-                          <span className="text-lg">{message.mood.emoji}</span>
-                          <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                            <div
-                              className="h-full transition-all duration-300"
-                              style={{
-                                width: `${message.mood.value}%`,
-                                backgroundColor: message.mood.value >= 70 
-                                  ? "#22c55e" // green
-                                  : message.mood.value >= 40 
-                                  ? "#eab308" // yellow
-                                  : "#ef4444" // red
-                              }}
-                            />
-                          </div>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {message.mood.label}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <p
-                    className={`leading-relaxed ${
+                  <div
+                    className={`max-w-[80%] rounded-2xl p-4 shadow-sm backdrop-blur-sm border ${
                       message.type === "user"
-                        ? "text-gray-900 dark:text-white"
-                        : "text-gray-900 dark:text-white"
+                        ? "bg-[#FFF5F3] border-[#E07A5F]/20 ml-auto"
+                        : "bg-white/80 dark:bg-gray-800/80 border-gray-200/50 dark:border-gray-700/50"
                     }`}
                   >
-                    {message.content}
-                  </p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-gray-500">
-                      {message.timestamp.toLocaleTimeString()}
-                    </span>
-                    {message.hasAudio && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handlePlayAudio(message.id)}
-                        className="h-6 w-6 p-0 hover:bg-[#56707F]/10"
-                      >
-                        {playingAudio === message.id ? (
-                          <Square className="w-3 h-3 text-[#56707F]" />
-                        ) : (
-                          <Play className="w-3 h-3 text-[#56707F]" />
+                    {message.type === "interviewer" && message.character && (
+                      <div className="flex items-center gap-3 mb-2">
+                        <img
+                          src={
+                            message.character.avatarAnimated ||
+                            message.character.avatar ||
+                            "/placeholder.svg"
+                          }
+                          alt={message.character.name}
+                          className="w-8 h-8 rounded-full object-cover border-2 border-[#E07A5F] bg-white"
+                          style={{ background: "#fff" }}
+                        />
+                        <span className="font-medium text-[#56707F]">
+                          {message.character.name}
+                        </span>
+                        {message.mood && (
+                          <div className="flex items-center gap-2 ml-auto">
+                            <span className="text-lg">{message.mood.emoji}</span>
+                            <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div
+                                className="h-full transition-all duration-300"
+                                style={{
+                                  width: `${message.mood.value}%`,
+                                  backgroundColor: message.mood.value >= 70 
+                                    ? "#22c55e" // green
+                                    : message.mood.value >= 40 
+                                    ? "#eab308" // yellow
+                                    : "#ef4444" // red
+                                }}
+                              />
+                            </div>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              {message.mood.label}
+                            </span>
+                          </div>
                         )}
-                      </Button>
+                      </div>
+                    )}
+                    <p
+                      className={`leading-relaxed ${
+                        message.type === "user"
+                          ? "text-gray-900 dark:text-white"
+                          : "text-gray-900 dark:text-white"
+                      }`}
+                    >
+                      {message.content}
+                    </p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-gray-500">
+                        {message.timestamp.toLocaleTimeString()}
+                      </span>
+                      {message.hasAudio && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePlayAudio(message.id)}
+                          className="h-6 w-6 p-0 hover:bg-[#56707F]/10"
+                        >
+                          {playingAudio === message.id ? (
+                            <Square className="w-3 h-3 text-[#56707F]" />
+                          ) : (
+                            <Play className="w-3 h-3 text-[#56707F]" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    {playingAudio === message.id && (
+                      <div className="mt-2">
+                        <VoiceWaveform isPlaying={true} />
+                      </div>
                     )}
                   </div>
-                  {playingAudio === message.id && (
-                    <div className="mt-2">
-                      <VoiceWaveform isPlaying={true} />
-                    </div>
-                  )}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </ScrollArea>
+              ))}
+            </div>
+          </ScrollArea>
 
-      {/* Transcription Preview */}
-      {(isTranscribing || transcript) && (
-        <div className="px-4 py-2 bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm border-t border-gray-200/50 dark:border-gray-700/50">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            {isTranscribing ? "Transcribing..." : "Preview:"}
+          {/* Video Capture */}
+          <div className="p-4 border-t border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+            <VideoCapture
+              onMetricsUpdate={onFaceMetricsUpdate}
+              className="max-w-md mx-auto"
+            />
           </div>
-          <div className="text-gray-900 dark:text-white">
-            {transcript || "Listening..."}
+
+          {/* Voice Input */}
+          <div className="p-4 border-t border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+            {(isTranscribing || transcript) && (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {isTranscribing ? "Transcribing..." : "Preview:"}
+              </div>
+            )}
+            <div className="text-gray-900 dark:text-white">
+              {transcript || "Listening..."}
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Control Bar */}
       <div className="p-4 bg-white dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 shadow-lg">

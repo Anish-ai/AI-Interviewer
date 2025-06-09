@@ -41,7 +41,7 @@ export function Sidebar({
 
   return (
     <div
-      className={`relative bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-r border-gray-200/50 dark:border-gray-700/50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 h-screen bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-r border-gray-200/50 dark:border-gray-700/50 transition-all duration-300 ${
         collapsed ? "w-16" : "w-80"
       }`}
     >

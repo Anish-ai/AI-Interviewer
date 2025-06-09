@@ -7,6 +7,7 @@ import { ChatCanvas } from "@/components/chat-canvas";
 import { SessionModal } from "@/components/session-modal";
 import type { Character, InterviewType, Message, SessionData } from "@/types";
 import { Loader2 } from "lucide-react";
+import type { FaceMetrics } from "@/lib/hooks/useFaceDetection";
 
 const characters: Character[] = [
   {
@@ -83,6 +84,7 @@ export default function MockInterviewAI() {
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("en");
+  const [faceMetricsHistory, setFaceMetricsHistory] = useState<FaceMetrics[]>([]);
 
   // Simple translation object (you can expand this)
   const translations = {
@@ -399,6 +401,32 @@ export default function MockInterviewAI() {
     }
   };
 
+  const handleFaceMetricsUpdate = (metrics: FaceMetrics) => {
+    setFaceMetricsHistory(prev => [...prev, metrics]);
+  };
+
+  const calculateFaceMetricsSummary = (metrics: FaceMetrics[]): SessionData['faceMetrics'] => {
+    if (metrics.length === 0) return undefined;
+
+    const averageConfidence = metrics.reduce((sum, m) => sum + m.confidence, 0) / metrics.length;
+    
+    const expressionCounts: Record<string, number> = {};
+    metrics.forEach(m => {
+      const dominantExpression = Object.entries(m.expressions).reduce(
+        (a, b) => (a[1] > b[1] ? a : b)
+      )[0];
+      expressionCounts[dominantExpression] = (expressionCounts[dominantExpression] || 0) + 1;
+    });
+
+    const eyeContactPercentage = metrics.filter(m => m.eyeContact).length / metrics.length;
+
+    return {
+      averageConfidence,
+      dominantExpressions: expressionCounts,
+      eyeContactPercentage,
+    };
+  };
+
   const handleAnalysis = async () => {
     if (!selectedCharacter || !selectedType || messages.length === 0) return;
     setAnalysisLoading(true);
@@ -440,6 +468,10 @@ export default function MockInterviewAI() {
             .replace(/```json|```/g, "")
             .trim();
           const analysis = JSON.parse(cleaned);
+          
+          // Add face metrics to the analysis
+          analysis.faceMetrics = calculateFaceMetricsSummary(faceMetricsHistory);
+          
           setSessionData(analysis);
           setSessionComplete(true);
         } catch (error) {
@@ -555,6 +587,7 @@ export default function MockInterviewAI() {
           totalQuestions={5}
           sidebarCollapsed={sidebarCollapsed}
           onAnalysis={handleAnalysis}
+          onFaceMetricsUpdate={handleFaceMetricsUpdate}
         />
       </div>
 

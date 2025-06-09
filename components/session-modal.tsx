@@ -15,8 +15,10 @@ import {
   BookOpen,
   Lightbulb,
   BarChart2,
+  Camera,
 } from "lucide-react";
 import type { SessionData } from "@/types";
+import type { FaceMetrics } from "@/lib/hooks/useFaceDetection";
 
 interface SessionModalProps {
   sessionData: SessionData | null;
@@ -33,7 +35,7 @@ export function SessionModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl mx-auto w-full bg-white dark:bg-gray-800 p-4 md:p-8 rounded-2xl">
+      <DialogContent className="max-w-4xl w-full bg-white dark:bg-gray-800 p-4 md:p-8 rounded-2xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <BarChart2 className="w-7 h-7 text-[#E07A5F]" /> Interview Analysis
@@ -151,6 +153,56 @@ export function SessionModal({
               ))}
             </ul>
           </div>
+
+          {/* Face Metrics Analysis */}
+          {sessionData.faceMetrics && (
+            <div className="col-span-2 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
+              <div className="flex items-center gap-2 mb-4">
+                <Camera className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-lg font-semibold text-indigo-800 dark:text-indigo-200">
+                  Visual Analysis
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Confidence Score */}
+                <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                    Confidence Level
+                  </div>
+                  <div className="text-2xl font-bold text-indigo-600">
+                    {Math.round(sessionData.faceMetrics.averageConfidence * 100)}%
+                  </div>
+                </div>
+
+                {/* Eye Contact */}
+                <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                    Eye Contact
+                  </div>
+                  <div className="text-2xl font-bold text-indigo-600">
+                    {Math.round(sessionData.faceMetrics.eyeContactPercentage * 100)}%
+                  </div>
+                </div>
+
+                {/* Dominant Expression */}
+                <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                    Most Common Expression
+                  </div>
+                  <div className="text-2xl font-bold text-indigo-600">
+                    {Object.entries(sessionData.faceMetrics.dominantExpressions)
+                      .sort(([, a], [, b]) => b - a)[0][0]
+                      .charAt(0)
+                      .toUpperCase() +
+                      Object.entries(sessionData.faceMetrics.dominantExpressions)
+                        .sort(([, a], [, b]) => b - a)[0][0]
+                        .slice(1)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">

@@ -39,4 +39,9 @@ export interface SessionData {
   communication: string
   knowledge: string
   recommendations: string[]
+  faceMetrics?: {
+    averageConfidence: number
+    dominantExpressions: Record<string, number>
+    eyeContactPercentage: number
+  }
 }
