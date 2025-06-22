@@ -41,6 +41,37 @@ export class GeminiService {
     }
   }
 
+  async generateResponseWithFile(prompt: string, file: { buffer: Buffer, mimeType: string }): Promise<string> {
+    try {
+      console.log('🤖 Sending prompt and file to Gemini...');
+      const filePart = {
+        inlineData: {
+          data: file.buffer.toString('base64'),
+          mimeType: file.mimeType,
+        },
+      };
+
+      const result = await this.model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }, filePart] }],
+        generationConfig: {
+          temperature: 0.2, // Lower temperature for more deterministic extraction
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 2048, // Increase tokens for potentially long resumes
+        },
+      });
+
+      const response = await result.response;
+      const text = response.text();
+      
+      console.log('✅ Gemini file response:', text);
+      return text;
+    } catch (error) {
+      console.error('❌ Error generating response with file from Gemini:', error);
+      throw new Error('Gemini failed to process the file.');
+    }
+  }
+
   async generateChatResponse(messages: { role: string; content: string }[]): Promise<string> {
     try {
       const chat = this.model.startChat({

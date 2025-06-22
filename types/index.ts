@@ -32,6 +32,34 @@ export interface Message {
   }
 }
 
+export interface ResumeData {
+  name: string
+  email: string
+  phone: string
+  summary: string
+  experience: Array<{
+    title: string
+    company: string
+    duration: string
+    description: string
+    achievements: string[]
+  }>
+  education: Array<{
+    degree: string
+    institution: string
+    year: string
+    gpa?: string
+  }>
+  skills: string[]
+  projects: Array<{
+    name: string
+    description: string
+    technologies: string[]
+    link?: string
+  }>
+  achievements: string[]
+}
+
 export interface SessionData {
   rating: number
   strengths: string[]
