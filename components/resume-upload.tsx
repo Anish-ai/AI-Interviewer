@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Upload, FileText, CheckCircle, AlertCircle, Loader2, Edit } from "lucide-react";
 import type { ResumeData } from "@/types";
+import { createEmptyResumeData, validateResumeData } from "@/types";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
@@ -21,6 +22,7 @@ export function ResumeUpload({ onResumeExtracted, isUploaded, resumeData }: Resu
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showManualForm, setShowManualForm] = useState(false);
   const [manualSummary, setManualSummary] = useState('');
@@ -49,6 +51,7 @@ export function ResumeUpload({ onResumeExtracted, isUploaded, resumeData }: Resu
 
     setIsUploading(true);
     setError(null);
+    setWarnings([]);
     setUploadProgress(0);
 
     try {
@@ -76,6 +79,9 @@ export function ResumeUpload({ onResumeExtracted, isUploaded, resumeData }: Resu
       
       if (data.success) {
         onResumeExtracted(data.resumeData);
+        if (data.warnings && Array.isArray(data.warnings)) {
+          setWarnings(data.warnings);
+        }
       } else {
         throw new Error(data.error || 'Failed to extract resume data');
       }
@@ -87,23 +93,12 @@ export function ResumeUpload({ onResumeExtracted, isUploaded, resumeData }: Resu
     }
   };
 
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleRemoveResume = () => {
-    onResumeExtracted({
-      name: '', email: '', phone: '', summary: '', experience: [],
-      education: [], skills: [], projects: [], achievements: []
-    });
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
   const handleManualSubmit = () => {
     if (!manualSummary && !manualSkills) {
       setError("Please provide at least a role or some skills.");
       return;
     }
+    
     const manualData: ResumeData = {
         name: 'Candidate',
         email: '',
@@ -115,38 +110,57 @@ export function ResumeUpload({ onResumeExtracted, isUploaded, resumeData }: Resu
         projects: [],
         achievements: [],
     };
+
+    // Validate the manual data
+    const validation = validateResumeData(manualData);
+    if (!validation.isValid) {
+      setError(validation.errors.join(', '));
+      return;
+    }
+
+    if (validation.warnings.length > 0) {
+      console.warn('Resume warnings:', validation.warnings);
+    }
+
     onResumeExtracted(manualData);
     setError(null);
     setShowManualForm(false);
   };
 
   const UploadComponent = () => (
-    <div className="space-y-4">
-      <div
-        className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center cursor-pointer hover:border-[#E07A5F] hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-        onClick={handleUploadClick}
-      >
-        <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-        <p className="text-sm text-gray-600 dark:text-gray-400">Click to upload or drag and drop</p>
-        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">PDF, Word, or Text files up to 5MB</p>
+    <div className="space-y-3 lg:space-y-4">
+      <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 lg:p-6 text-center hover:border-[#E07A5F] dark:hover:border-[#E07A5F] transition-colors">
+        <Upload className="w-8 h-8 lg:w-10 lg:h-10 mx-auto mb-2 lg:mb-3 text-gray-400" />
+        <p className="text-sm lg:text-base text-gray-600 dark:text-gray-300 mb-2">
+          Drop your resume here or click to browse
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Supports PDF, DOC, DOCX (max 5MB)
+        </p>
+        <input
+          type="file"
+          accept=".pdf,.doc,.docx"
+          onChange={handleFileSelect}
+          className="hidden"
+          ref={fileInputRef}
+        />
+        <Button
+          onClick={() => fileInputRef.current?.click()}
+          variant="outline"
+          size="sm"
+          className="mt-2 lg:mt-3"
+        >
+          Choose File
+        </Button>
       </div>
-
-      {isUploading && (
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Extracting data...</span>
-            <span>{uploadProgress}%</span>
-          </div>
-          <Progress value={uploadProgress} className="w-full" />
-        </div>
-      )}
-
-      <Button onClick={handleUploadClick} disabled={isUploading} className="w-full">
-        {isUploading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</> : <><Upload className="w-4 h-4 mr-2" />Choose File</>}
-      </Button>
-      <div className="text-center">
-        <Button variant="link" className="text-sm" onClick={() => { setShowManualForm(true); setError(null); }}>
-          Or enter details manually
+      <div className="flex gap-2">
+        <Button
+          onClick={() => setShowManualForm(true)}
+          variant="outline"
+          size="sm"
+          className="flex-1"
+        >
+          Manual Entry
         </Button>
       </div>
     </div>
@@ -173,17 +187,17 @@ export function ResumeUpload({ onResumeExtracted, isUploaded, resumeData }: Resu
   );
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {showManualForm ? <Edit className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+    <Card className="w-full max-w-sm lg:max-w-md">
+      <CardHeader className="pb-3 lg:pb-4">
+        <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
+          {showManualForm ? <Edit className="w-4 h-4 lg:w-5 lg:h-5" /> : <FileText className="w-4 h-4 lg:w-5 lg:h-5" />}
           {showManualForm ? 'Manual Entry' : 'Resume Upload'}
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-sm">
           Upload your resume or enter key details to personalize the interview
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 lg:space-y-4">
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -191,8 +205,24 @@ export function ResumeUpload({ onResumeExtracted, isUploaded, resumeData }: Resu
           </Alert>
         )}
 
+        {warnings.length > 0 && (
+          <Alert variant="default" className="border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20">
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800 dark:text-yellow-200">
+              <div className="space-y-1">
+                <p className="font-medium">Resume extracted with some issues:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  {warnings.map((warning, index) => (
+                    <li key={index} className="text-sm">{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {!isUploaded ? (
-          showManualForm ? <ManualFormComponent /> : <UploadComponent />
+          !showManualForm ? <UploadComponent /> : <ManualFormComponent />
         ) : (
           <div className="space-y-4">
             <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
@@ -217,19 +247,11 @@ export function ResumeUpload({ onResumeExtracted, isUploaded, resumeData }: Resu
               </div>
             </div>
 
-            <Button variant="outline" onClick={handleRemoveResume} className="w-full">
+            <Button variant="outline" onClick={() => { onResumeExtracted(createEmptyResumeData()); setWarnings([]); }} className="w-full">
               Remove and Start Over
             </Button>
           </div>
         )}
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf,.doc,.docx,.txt"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
       </CardContent>
     </Card>
   );

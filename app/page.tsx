@@ -6,7 +6,9 @@ import { Sidebar } from "@/components/sidebar";
 import { ChatCanvas } from "@/components/chat-canvas";
 import { SessionModal } from "@/components/session-modal";
 import { ResumeUpload } from "@/components/resume-upload";
-import type { Character, InterviewType, Message, SessionData, ResumeData } from "@/types";
+import { InterviewCustomization } from "@/components/interview-customization";
+import type { Character, InterviewType, Message, SessionData, ResumeData, InterviewCustomization as CustomizationType } from "@/types";
+import { createEmptyResumeData, validateResumeData } from "@/types";
 import { Loader2 } from "lucide-react";
 import type { FaceMetrics } from "@/lib/hooks/useFaceDetection";
 
@@ -76,7 +78,6 @@ export default function MockInterviewAI() {
   const [selectedType, setSelectedType] = useState<InterviewType | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isRecording, setIsRecording] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(1);
@@ -88,6 +89,12 @@ export default function MockInterviewAI() {
   const [faceMetricsHistory, setFaceMetricsHistory] = useState<FaceMetrics[]>([]);
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [isResumeUploaded, setIsResumeUploaded] = useState(false);
+  const [interviewCustomization, setInterviewCustomization] = useState<CustomizationType>({
+    difficulty: 'moderate',
+    topicFocus: 'mixed',
+    purpose: 'general'
+  });
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Simple translation object (you can expand this)
   const translations = {
@@ -146,14 +153,21 @@ export default function MockInterviewAI() {
     character: Character,
     type: InterviewType
   ) => {
+    const difficultyText = interviewCustomization.difficulty === 'beginner' ? 'beginner-friendly' : 
+                          interviewCustomization.difficulty === 'advanced' ? 'advanced' : 'moderate';
+    const topicText = interviewCustomization.topicFocus === 'mixed' ? 'various topics' : 
+                     `${interviewCustomization.topicFocus} topics`;
+    const purposeText = interviewCustomization.purpose === 'intern' ? 'internship' : 
+                       interviewCustomization.purpose === 'placement' ? 'placement' : 'general';
+
     if (resumeData && resumeData.name) {
       return `Hi ${resumeData.name}, I'm ${character.name}, ${
         character.role
-      } for the AI team. I've reviewed your resume and I'll be conducting the ${type.name.toLowerCase()} interview today. Let's start with a brief introduction - please tell me about yourself and your background.`;
+      } for the AI team. I've reviewed your resume and I'll be conducting a ${difficultyText} ${type.name.toLowerCase()} interview focused on ${topicText} for ${purposeText} preparation. Let's start with a brief introduction - please tell me about yourself and your background.`;
     }
     return `Hi, I'm ${character.name}, ${
       character.role
-    } for the AI team. I'll be conducting the ${type.name.toLowerCase()} interview today. Let's start with a brief introduction - please tell me about yourself and your background.`;
+    } for the AI team. I'll be conducting a ${difficultyText} ${type.name.toLowerCase()} interview focused on ${topicText} for ${purposeText} preparation. Let's start with a brief introduction - please tell me about yourself and your background.`;
   };
 
   const initializeSession = async (
@@ -290,7 +304,10 @@ export default function MockInterviewAI() {
       - Character: ${selectedCharacter.name} (${selectedCharacter.role})
       - Interview Type: ${selectedType.name}
       - Current Question Number: ${currentQuestion} of 5
-      - Target Language: ${selectedLanguage}`;
+      - Target Language: ${selectedLanguage}
+      - Difficulty Level: ${interviewCustomization.difficulty}
+      - Topic Focus: ${interviewCustomization.topicFocus}
+      - Interview Purpose: ${interviewCustomization.purpose}`;
 
       // Add resume context if available
       if (resumeData && isResumeUploaded) {
@@ -312,13 +329,16 @@ export default function MockInterviewAI() {
       2. Shows expertise in ${selectedCharacter.role} role
       3. Builds upon the candidate's previous response
       4. Helps assess their skills and experience
-      5. Is in ${selectedLanguage}`;
+      5. Is in ${selectedLanguage}
+      6. Matches the ${interviewCustomization.difficulty} difficulty level
+      7. Focuses on ${interviewCustomization.topicFocus} topics
+      8. Is appropriate for ${interviewCustomization.purpose} interviews`;
 
       // Add resume-specific instructions
       if (resumeData && isResumeUploaded) {
         prompt += `
-      6. References specific details from their resume (experience, projects, skills, or achievements)
-      7. Asks about their actual work experience, projects, or technical skills mentioned in their resume`;
+      9. References specific details from their resume (experience, projects, skills, or achievements)
+      10. Asks about their actual work experience, projects, or technical skills mentioned in their resume`;
       }
 
       prompt += `
@@ -467,7 +487,11 @@ export default function MockInterviewAI() {
         selectedCharacter.role
       }, analyze this interview session and provide detailed feedback in ${selectedLanguage}.\n\nInterview Type: ${
         selectedType.name
-      }\nChat History:\n${messages
+      }\nInterview Customization:
+- Difficulty Level: ${interviewCustomization.difficulty}
+- Topic Focus: ${interviewCustomization.topicFocus}
+- Interview Purpose: ${interviewCustomization.purpose}
+\nChat History:\n${messages
         .map(
           (msg) =>
             `${msg.type === "user" ? "Candidate" : "Interviewer"}: ${
@@ -540,7 +564,36 @@ export default function MockInterviewAI() {
 
   const handleResumeExtracted = (data: ResumeData) => {
     setResumeData(data);
-    setIsResumeUploaded(data.name !== '' && data.experience.length > 0);
+    const validation = validateResumeData(data);
+    setIsResumeUploaded(validation.isValid);
+    
+    if (!validation.isValid) {
+      console.warn('Resume validation errors:', validation.errors);
+    }
+    if (validation.warnings.length > 0) {
+      console.warn('Resume validation warnings:', validation.warnings);
+    }
+  };
+
+  // Helper function to clear resume state
+  const clearResumeState = () => {
+    setResumeData(null);
+    setIsResumeUploaded(false);
+  };
+
+  // Helper function to reset interview state
+  const resetInterviewState = () => {
+    setMessages([]);
+    setCurrentQuestion(1);
+    setInterviewStarted(false);
+    setFaceMetricsHistory([]);
+    clearResumeState();
+    setSidebarOpen(false);
+    setInterviewCustomization({
+      difficulty: 'moderate',
+      topicFocus: 'mixed',
+      purpose: 'general'
+    });
   };
 
   // Show Start Interview button if not started
@@ -558,6 +611,7 @@ export default function MockInterviewAI() {
           onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
           selectedLanguage={selectedLanguage}
           onLanguageSelect={setSelectedLanguage}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
         <div className="flex h-[calc(100vh-64px)]">
           <Sidebar
@@ -567,21 +621,11 @@ export default function MockInterviewAI() {
             selectedType={selectedType}
             onCharacterSelect={handleCharacterSelect}
             onTypeSelect={handleTypeSelect}
-            collapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
             onResetInterview={() => {
-              setMessages([]);
-              setCurrentQuestion(1);
-              setInterviewStarted(false);
-              setResumeData(null);
-              setIsResumeUploaded(false);
+              resetInterviewState();
             }}
             onNewInterview={() => {
-              setMessages([]);
-              setCurrentQuestion(1);
-              setInterviewStarted(false);
-              setResumeData(null);
-              setIsResumeUploaded(false);
+              resetInterviewState();
             }}
             onViewHistory={() => {
               // You can implement a modal or navigation to view chatHistory if needed
@@ -589,21 +633,23 @@ export default function MockInterviewAI() {
               console.log(chatHistory);
             }}
             messages={messages}
+            isOpen={sidebarOpen}
+            onToggle={() => setSidebarOpen(!sidebarOpen)}
           />
-          <div className="flex-1 flex flex-col items-center justify-center p-8">
-            <div className="max-w-4xl w-full space-y-8">
+          <div className="flex-1 flex flex-col items-center justify-center p-4 lg:p-8 lg:ml-80">
+            <div className="max-w-6xl w-full space-y-6 lg:space-y-8">
               <div className="text-center">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 mt-12">
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-4 lg:mb-6 mt-8 lg:mt-12">
                   {t("welcomeTitle")}
                 </h1>
-                <p className="text-lg text-gray-600 dark:text-gray-300 max-w-xl mx-auto text-center mb-8">
+                <p className="text-base lg:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto text-center mb-6 lg:mb-8">
                   {t("welcomeSubtitle")}
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8 items-start">
                 {/* Resume Upload Section */}
-                <div className="flex justify-center">
+                <div className="flex flex-col items-center">
                   <ResumeUpload
                     onResumeExtracted={handleResumeExtracted}
                     isUploaded={isResumeUploaded}
@@ -611,13 +657,21 @@ export default function MockInterviewAI() {
                   />
                 </div>
 
+                {/* Interview Customization Section */}
+                <div className="flex flex-col items-center lg:col-span-1 xl:col-span-1">
+                  <InterviewCustomization
+                    customization={interviewCustomization}
+                    onCustomizationChange={setInterviewCustomization}
+                  />
+                </div>
+
                 {/* Interview Setup Section */}
-                <div className="flex flex-col justify-center space-y-6">
+                <div className="flex flex-col justify-center space-y-4 lg:space-y-6 lg:col-span-1 xl:col-span-1">
                   <div className="text-center">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                    <h2 className="text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white mb-3 lg:mb-4">
                       Interview Setup
                     </h2>
-                    <p className="text-gray-600 dark:text-gray-300 mb-6">
+                    <p className="text-sm lg:text-base text-gray-600 dark:text-gray-300 mb-6 lg:mb-8 max-w-md mx-auto">
                       {isResumeUploaded 
                         ? "Great! Your resume has been uploaded. The interviewer will ask personalized questions based on your experience."
                         : "Upload your resume for personalized questions, or proceed without it for general questions."
@@ -625,18 +679,18 @@ export default function MockInterviewAI() {
                     </p>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3 lg:space-y-4">
                     {!selectedCharacter && (
-                      <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      <div className="p-3 lg:p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <p className="text-xs lg:text-sm text-yellow-800 dark:text-yellow-200">
                           Please select an interviewer from the sidebar
                         </p>
                       </div>
                     )}
                     
                     {!selectedType && (
-                      <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      <div className="p-3 lg:p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <p className="text-xs lg:text-sm text-yellow-800 dark:text-yellow-200">
                           Please select an interview type from the sidebar
                         </p>
                       </div>
@@ -644,7 +698,7 @@ export default function MockInterviewAI() {
                   </div>
 
                   <button
-                    className="px-8 py-4 bg-[#E07A5F] text-white text-lg font-semibold rounded-xl shadow-lg hover:bg-[#E07A5F]/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 lg:px-8 py-3 lg:py-4 bg-[#E07A5F] text-white text-base lg:text-lg font-semibold rounded-xl shadow-lg hover:bg-[#E07A5F]/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!selectedCharacter || !selectedType}
                     onClick={async () => {
                       setInterviewStarted(true);
@@ -677,6 +731,7 @@ export default function MockInterviewAI() {
         onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
         selectedLanguage={selectedLanguage}
         onLanguageSelect={setSelectedLanguage}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />
 
       <div className="flex h-[calc(100vh-64px)]">
@@ -687,21 +742,11 @@ export default function MockInterviewAI() {
           selectedType={selectedType}
           onCharacterSelect={handleCharacterSelect}
           onTypeSelect={handleTypeSelect}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           onResetInterview={() => {
-            setMessages([]);
-            setCurrentQuestion(1);
-            setInterviewStarted(false);
-            setResumeData(null);
-            setIsResumeUploaded(false);
+            resetInterviewState();
           }}
           onNewInterview={() => {
-            setMessages([]);
-            setCurrentQuestion(1);
-            setInterviewStarted(false);
-            setResumeData(null);
-            setIsResumeUploaded(false);
+            resetInterviewState();
           }}
           onViewHistory={() => {
             // You can implement a modal or navigation to view chatHistory if needed
@@ -709,6 +754,8 @@ export default function MockInterviewAI() {
             console.log(chatHistory);
           }}
           messages={messages}
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
         />
 
         <ChatCanvas
@@ -720,7 +767,6 @@ export default function MockInterviewAI() {
           onVoiceInput={handleVoiceInput}
           currentQuestion={currentQuestion}
           totalQuestions={5}
-          sidebarCollapsed={sidebarCollapsed}
           onAnalysis={handleAnalysis}
           onFaceMetricsUpdate={handleFaceMetricsUpdate}
         />
@@ -745,10 +791,7 @@ export default function MockInterviewAI() {
           onClose={() => setSessionComplete(false)}
           onRetry={() => {
             setSessionComplete(false);
-            setMessages([]);
-            setCurrentQuestion(1);
-            setResumeData(null);
-            setIsResumeUploaded(false);
+            resetInterviewState();
             if (selectedCharacter && selectedType) {
               initializeSession(selectedCharacter, selectedType);
             }

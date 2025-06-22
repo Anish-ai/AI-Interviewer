@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GeminiService } from '@/lib/gemini';
-import type { ResumeData } from '@/types';
+import type { ResumeData, ResumeExtractionResult } from '@/types';
+import { validateResumeData } from '@/types';
 
 const geminiService = new GeminiService({
   apiKey: process.env.GEMINI_API_KEY || '',
@@ -58,6 +59,23 @@ If a field is not found, use an empty string or an empty array. Ensure the data 
           education: Array.isArray(parsedData.education) ? parsedData.education : [],
           projects: Array.isArray(parsedData.projects) ? parsedData.projects : [],
         };
+
+        // Validate the extracted resume data
+        const validation = validateResumeData(resumeData);
+        if (!validation.isValid) {
+          console.warn('Resume validation errors:', validation.errors);
+          console.warn('Resume validation warnings:', validation.warnings);
+          
+          // Return partial success if we have some data but with warnings
+          if (validation.warnings.length > 0 && validation.errors.length === 0) {
+            return NextResponse.json({
+              success: true,
+              resumeData,
+              message: 'Resume data extracted successfully with some warnings',
+              warnings: validation.warnings
+            });
+          }
+        }
 
       } else {
         throw new Error('No JSON found in Gemini response');

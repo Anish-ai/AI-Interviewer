@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Moon, Sun, MessageCircle, Mic, Globe } from "lucide-react";
+import { Moon, Sun, MessageCircle, Mic, Globe, Menu } from "lucide-react";
 import type { InterviewType } from "@/types";
 
 interface HeaderProps {
@@ -17,6 +17,7 @@ interface HeaderProps {
   onToggleDarkMode: () => void;
   selectedLanguage: string;
   onLanguageSelect: (lang: string) => void;
+  onToggleSidebar?: () => void;
 }
 
 const interviewTypes: InterviewType[] = [
@@ -54,6 +55,7 @@ export function Header({
   onToggleDarkMode,
   selectedLanguage,
   onLanguageSelect,
+  onToggleSidebar,
 }: HeaderProps) {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50">
@@ -140,6 +142,17 @@ export function Header({
               <Moon className="w-5 h-5" />
             )}
           </Button>
+
+          {onToggleSidebar && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleSidebar}
+              className="w-10 h-10 lg:hidden"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          )}
         </div>
       </div>
     </header>
