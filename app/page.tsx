@@ -5,7 +5,8 @@ import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 import { ChatCanvas } from "@/components/chat-canvas";
 import { SessionModal } from "@/components/session-modal";
-import type { Character, InterviewType, Message, SessionData } from "@/types";
+import { ResumeUpload } from "@/components/resume-upload";
+import type { Character, InterviewType, Message, SessionData, ResumeData } from "@/types";
 import { Loader2 } from "lucide-react";
 import type { FaceMetrics } from "@/lib/hooks/useFaceDetection";
 
@@ -85,6 +86,8 @@ export default function MockInterviewAI() {
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("en");
   const [faceMetricsHistory, setFaceMetricsHistory] = useState<FaceMetrics[]>([]);
+  const [resumeData, setResumeData] = useState<ResumeData | null>(null);
+  const [isResumeUploaded, setIsResumeUploaded] = useState(false);
 
   // Simple translation object (you can expand this)
   const translations = {
@@ -143,6 +146,11 @@ export default function MockInterviewAI() {
     character: Character,
     type: InterviewType
   ) => {
+    if (resumeData && resumeData.name) {
+      return `Hi ${resumeData.name}, I'm ${character.name}, ${
+        character.role
+      } for the AI team. I've reviewed your resume and I'll be conducting the ${type.name.toLowerCase()} interview today. Let's start with a brief introduction - please tell me about yourself and your background.`;
+    }
     return `Hi, I'm ${character.name}, ${
       character.role
     } for the AI team. I'll be conducting the ${type.name.toLowerCase()} interview today. Let's start with a brief introduction - please tell me about yourself and your background.`;
@@ -152,7 +160,7 @@ export default function MockInterviewAI() {
     character: Character,
     type: InterviewType
   ) => {
-    const welcomeMessage = `My name is ${character.name}. Please introduce yourself and tell me more about your background.`;
+    const welcomeMessage = getInterviewerIntroduction(character, type);
     setMessages([
       {
         id: "1",
@@ -272,8 +280,8 @@ export default function MockInterviewAI() {
     setMessages((prev) => [...prev, userMessage]);
 
     try {
-      // Create a prompt for Gemini based on the character and interview type
-      const prompt = `You are ${selectedCharacter.name}, a ${
+      // Create a prompt for Gemini based on the character, interview type, and resume data
+      let prompt = `You are ${selectedCharacter.name}, a ${
         selectedCharacter.role
       } conducting a ${selectedType.name.toLowerCase()} interview. 
       The candidate just said: "${transcript}"
@@ -282,14 +290,38 @@ export default function MockInterviewAI() {
       - Character: ${selectedCharacter.name} (${selectedCharacter.role})
       - Interview Type: ${selectedType.name}
       - Current Question Number: ${currentQuestion} of 5
-      - Target Language: ${selectedLanguage}
+      - Target Language: ${selectedLanguage}`;
 
+      // Add resume context if available
+      if (resumeData && isResumeUploaded) {
+        prompt += `
+      
+      Candidate's Resume Information:
+      - Name: ${resumeData.name}
+      - Summary: ${resumeData.summary}
+      - Experience: ${resumeData.experience.map(exp => `${exp.title} at ${exp.company} (${exp.duration})`).join(', ')}
+      - Skills: ${resumeData.skills.join(', ')}
+      - Projects: ${resumeData.projects.map(proj => proj.name).join(', ')}
+      - Achievements: ${resumeData.achievements.join(', ')}`;
+      }
+
+      prompt += `
+      
       Generate a relevant follow-up question that:
       1. Is specific to the ${selectedType.name.toLowerCase()} interview type
       2. Shows expertise in ${selectedCharacter.role} role
       3. Builds upon the candidate's previous response
       4. Helps assess their skills and experience
-      5. Is in ${selectedLanguage}
+      5. Is in ${selectedLanguage}`;
+
+      // Add resume-specific instructions
+      if (resumeData && isResumeUploaded) {
+        prompt += `
+      6. References specific details from their resume (experience, projects, skills, or achievements)
+      7. Asks about their actual work experience, projects, or technical skills mentioned in their resume`;
+      }
+
+      prompt += `
       
       Also, analyze your mood as the interviewer based on the candidate's response. Consider:
       - The quality and relevance of their answer
@@ -431,7 +463,7 @@ export default function MockInterviewAI() {
     if (!selectedCharacter || !selectedType || messages.length === 0) return;
     setAnalysisLoading(true);
     try {
-      const analysisPrompt = `As ${selectedCharacter.name}, a ${
+      let analysisPrompt = `As ${selectedCharacter.name}, a ${
         selectedCharacter.role
       }, analyze this interview session and provide detailed feedback in ${selectedLanguage}.\n\nInterview Type: ${
         selectedType.name
@@ -444,10 +476,31 @@ export default function MockInterviewAI() {
         )
         .join(
           "\n"
-        )}\n\nPlease provide:\n1. Overall rating (out of 5 stars)\n2. Key strengths (3 points)\n3. Areas for improvement (3 points)\n4. Communication skills assessment\n5. Technical/Professional knowledge evaluation
-6. Specific recommendations for improvement
+        )}`;
+
+      // Add resume context if available
+      if (resumeData && isResumeUploaded) {
+        analysisPrompt += `\n\nCandidate's Resume Information:
+- Name: ${resumeData.name}
+- Summary: ${resumeData.summary}
+- Experience: ${resumeData.experience.map(exp => `${exp.title} at ${exp.company} (${exp.duration})`).join(', ')}
+- Skills: ${resumeData.skills.join(', ')}
+- Projects: ${resumeData.projects.map(proj => proj.name).join(', ')}
+- Achievements: ${resumeData.achievements.join(', ')}`;
+      }
+
+      analysisPrompt += `\n\nPlease provide:\n1. Overall rating (out of 5 stars)\n2. Key strengths (3 points)\n3. Areas for improvement (3 points)\n4. Communication skills assessment\n5. Technical/Professional knowledge evaluation
+6. Specific recommendations for improvement`;
+
+      // Add resume-specific analysis instructions
+      if (resumeData && isResumeUploaded) {
+        analysisPrompt += `\n7. How well their responses aligned with their resume experience
+8. Whether they effectively communicated their actual skills and achievements
+9. Suggestions for better connecting their responses to their documented experience`;
+      }
       
-      Format the response as a JSON object with these fields, ensuring all text is in ${selectedLanguage}:\n{\n  "rating": number,\n  "strengths": string[],\n  "improvements": string[],\n  "communication": string,\n  "knowledge": string,\n  "recommendations": string[]\n}`;
+      analysisPrompt += `\n\nFormat the response as a JSON object with these fields, ensuring all text is in ${selectedLanguage}:\n{\n  "rating": number,\n  "strengths": string[],\n  "improvements": string[],\n  "communication": string,\n  "knowledge": string,\n  "recommendations": string[]\n}`;
+
       const response = await fetch("/api/process-message", {
         method: "POST",
         headers: {
@@ -485,6 +538,11 @@ export default function MockInterviewAI() {
     }
   };
 
+  const handleResumeExtracted = (data: ResumeData) => {
+    setResumeData(data);
+    setIsResumeUploaded(data.name !== '' && data.experience.length > 0);
+  };
+
   // Show Start Interview button if not started
   if (!interviewStarted) {
     return (
@@ -515,11 +573,15 @@ export default function MockInterviewAI() {
               setMessages([]);
               setCurrentQuestion(1);
               setInterviewStarted(false);
+              setResumeData(null);
+              setIsResumeUploaded(false);
             }}
             onNewInterview={() => {
               setMessages([]);
               setCurrentQuestion(1);
               setInterviewStarted(false);
+              setResumeData(null);
+              setIsResumeUploaded(false);
             }}
             onViewHistory={() => {
               // You can implement a modal or navigation to view chatHistory if needed
@@ -528,25 +590,74 @@ export default function MockInterviewAI() {
             }}
             messages={messages}
           />
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 mt-12">
-              {t("welcomeTitle")}
-            </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-xl text-center mb-8">
-              {t("welcomeSubtitle")}
-            </p>
-            <button
-              className="px-8 py-4 bg-[#E07A5F] text-white text-lg font-semibold rounded-xl shadow-lg hover:bg-[#E07A5F]/90 transition"
-              disabled={!selectedCharacter || !selectedType}
-              onClick={async () => {
-                setInterviewStarted(true);
-                if (selectedCharacter && selectedType) {
-                  await initializeSession(selectedCharacter, selectedType);
-                }
-              }}
-            >
-              {t("startButton")}
-            </button>
+          <div className="flex-1 flex flex-col items-center justify-center p-8">
+            <div className="max-w-4xl w-full space-y-8">
+              <div className="text-center">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 mt-12">
+                  {t("welcomeTitle")}
+                </h1>
+                <p className="text-lg text-gray-600 dark:text-gray-300 max-w-xl mx-auto text-center mb-8">
+                  {t("welcomeSubtitle")}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Resume Upload Section */}
+                <div className="flex justify-center">
+                  <ResumeUpload
+                    onResumeExtracted={handleResumeExtracted}
+                    isUploaded={isResumeUploaded}
+                    resumeData={resumeData}
+                  />
+                </div>
+
+                {/* Interview Setup Section */}
+                <div className="flex flex-col justify-center space-y-6">
+                  <div className="text-center">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                      Interview Setup
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-300 mb-6">
+                      {isResumeUploaded 
+                        ? "Great! Your resume has been uploaded. The interviewer will ask personalized questions based on your experience."
+                        : "Upload your resume for personalized questions, or proceed without it for general questions."
+                      }
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {!selectedCharacter && (
+                      <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                          Please select an interviewer from the sidebar
+                        </p>
+                      </div>
+                    )}
+                    
+                    {!selectedType && (
+                      <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                          Please select an interview type from the sidebar
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    className="px-8 py-4 bg-[#E07A5F] text-white text-lg font-semibold rounded-xl shadow-lg hover:bg-[#E07A5F]/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!selectedCharacter || !selectedType}
+                    onClick={async () => {
+                      setInterviewStarted(true);
+                      if (selectedCharacter && selectedType) {
+                        await initializeSession(selectedCharacter, selectedType);
+                      }
+                    }}
+                  >
+                    {t("startButton")}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -582,11 +693,15 @@ export default function MockInterviewAI() {
             setMessages([]);
             setCurrentQuestion(1);
             setInterviewStarted(false);
+            setResumeData(null);
+            setIsResumeUploaded(false);
           }}
           onNewInterview={() => {
             setMessages([]);
             setCurrentQuestion(1);
             setInterviewStarted(false);
+            setResumeData(null);
+            setIsResumeUploaded(false);
           }}
           onViewHistory={() => {
             // You can implement a modal or navigation to view chatHistory if needed
@@ -632,6 +747,8 @@ export default function MockInterviewAI() {
             setSessionComplete(false);
             setMessages([]);
             setCurrentQuestion(1);
+            setResumeData(null);
+            setIsResumeUploaded(false);
             if (selectedCharacter && selectedType) {
               initializeSession(selectedCharacter, selectedType);
             }

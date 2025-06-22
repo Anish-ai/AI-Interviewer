@@ -1,0 +1,54 @@
+JOHN DOE
+Software Engineer
+john.doe@email.com | (555) 123-4567 | linkedin.com/in/johndoe
+
+PROFESSIONAL SUMMARY
+Experienced software engineer with 5+ years of expertise in full-stack development, specializing in React, Node.js, and cloud technologies. Proven track record of delivering scalable applications and leading development teams.
+
+EXPERIENCE
+
+Senior Software Engineer
+TechCorp Inc. | 2021 - Present
+• Led development of a microservices-based e-commerce platform serving 100K+ users
+• Implemented CI/CD pipelines reducing deployment time by 60%
+• Mentored 3 junior developers and conducted code reviews
+• Technologies: React, Node.js, AWS, Docker, Kubernetes
+
+Software Developer
+StartupXYZ | 2019 - 2021
+• Built RESTful APIs and frontend components for SaaS application
+• Collaborated with product team to implement new features
+• Reduced application load time by 40% through optimization
+• Technologies: JavaScript, Python, PostgreSQL, Redis
+
+EDUCATION
+
+Bachelor of Science in Computer Science
+University of Technology | 2019
+GPA: 3.8/4.0
+
+SKILLS
+• Programming Languages: JavaScript, TypeScript, Python, Java
+• Frontend: React, Vue.js, HTML5, CSS3, SASS
+• Backend: Node.js, Express, Django, Spring Boot
+• Databases: PostgreSQL, MongoDB, Redis
+• Cloud & DevOps: AWS, Docker, Kubernetes, Jenkins
+• Tools: Git, VS Code, Postman, Jira
+
+PROJECTS
+
+E-Commerce Platform
+• Built a full-stack e-commerce solution with payment integration
+• Technologies: React, Node.js, Stripe, MongoDB
+• Link: github.com/johndoe/ecommerce
+
+Task Management App
+• Developed a collaborative task management application
+• Features: real-time updates, file sharing, team collaboration
+• Technologies: Vue.js, Socket.io, PostgreSQL
+
+ACHIEVEMENTS
+• Employee of the Year 2022 at TechCorp Inc.
+• Led team that won Best Innovation Award at Tech Conference 2023
+• Published 2 technical articles on Medium
+• Speaker at ReactConf 2022 
