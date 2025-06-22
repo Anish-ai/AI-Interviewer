@@ -39,21 +39,21 @@ If a field is not found, use an empty string or an empty array. Ensure the data 
     
     let resumeData: ResumeData;
     try {
-+      let parsedData;
-+      try {
-+        // Try parsing the entire response as JSON
-+        parsedData = JSON.parse(extractedData);
-+      } catch (e) {
-+        // Fallback: try to find the first JSON object in the string
-+        const firstBrace = extractedData.indexOf('{');
-+        const lastBrace = extractedData.lastIndexOf('}');
-+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-+          const possibleJson = extractedData.substring(firstBrace, lastBrace + 1);
-+          parsedData = JSON.parse(possibleJson);
-+        } else {
-+          throw new Error('No valid JSON object found in Gemini response.');
-+        }
-+      }
+      let parsedData;
+      try {
+        // Try parsing the entire response as JSON
+        parsedData = JSON.parse(extractedData);
+      } catch (e) {
+        // Fallback: try to find the first JSON object in the string
+        const firstBrace = extractedData.indexOf('{');
+        const lastBrace = extractedData.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          const possibleJson = extractedData.substring(firstBrace, lastBrace + 1);
+          parsedData = JSON.parse(possibleJson);
+        } else {
+          throw new Error('No valid JSON object found in Gemini response.');
+        }
+      }
 
         // Sanitize data to ensure arrays are in the correct format
         const ensureStringArray = (field: any): string[] => {
@@ -70,10 +70,6 @@ If a field is not found, use an empty string or an empty array. Ensure the data 
           education: Array.isArray(parsedData.education) ? parsedData.education : [],
           projects: Array.isArray(parsedData.projects) ? parsedData.projects : [],
         };
-
-      } else {
-        throw new Error('No JSON found in Gemini response');
-      }
 
       if (!resumeData.name && !resumeData.experience.length && !resumeData.skills.length) {
         throw new Error('Insufficient data extracted from resume');
