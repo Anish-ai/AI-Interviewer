@@ -16,8 +16,8 @@ interface InterviewLayoutProps {
   onCharacterSelect: (character: Character) => void;
   interviewTypes: InterviewType[];
   characters: Character[];
-  sidebarCollapsed: boolean;
-  onToggleCollapse: () => void;
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
   onResetInterview: () => void;
   onNewInterview: () => void;
   onViewHistory: () => void;
@@ -45,8 +45,8 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
   onCharacterSelect,
   interviewTypes,
   characters,
-  sidebarCollapsed,
-  onToggleCollapse,
+  isSidebarOpen,
+  onToggleSidebar,
   onResetInterview,
   onNewInterview,
   onViewHistory,
@@ -82,12 +82,12 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
           selectedType={selectedType}
           onCharacterSelect={onCharacterSelect}
           onTypeSelect={onTypeSelect}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={onToggleCollapse}
           onResetInterview={onResetInterview}
           onNewInterview={onNewInterview}
           onViewHistory={onViewHistory}
           messages={messages}
+          isOpen={isSidebarOpen}
+          onToggle={onToggleSidebar}
         />
         <ChatCanvas
           messages={messages}
@@ -98,7 +98,6 @@ export const InterviewLayout: React.FC<InterviewLayoutProps> = ({
           onVoiceInput={onVoiceInput}
           currentQuestion={currentQuestion}
           totalQuestions={totalQuestions}
-          sidebarCollapsed={sidebarCollapsed}
           onAnalysis={onAnalysis}
           onFaceMetricsUpdate={onFaceMetricsUpdate}
         />
