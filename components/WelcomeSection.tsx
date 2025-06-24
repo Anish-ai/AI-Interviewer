@@ -74,12 +74,12 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
           selectedType={selectedType}
           onCharacterSelect={onCharacterSelect}
           onTypeSelect={onTypeSelect}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={onToggleCollapse}
           onResetInterview={onResetInterview}
           onNewInterview={onNewInterview}
           onViewHistory={onViewHistory}
           messages={messages}
+          isOpen={!sidebarCollapsed}
+          onToggle={onToggleCollapse}
         />
         <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 overflow-y-auto">
           <div className="w-full max-w-2xl space-y-8">

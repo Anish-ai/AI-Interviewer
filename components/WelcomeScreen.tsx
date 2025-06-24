@@ -35,7 +35,7 @@ export function WelcomeScreen({
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-8 ml-80">
       <div className="max-w-6xl w-full space-y-8">
-        <div className="text-center">
+        <div className="text-center mt-32">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 mt-12">
             {t("welcomeTitle")}
           </h1>

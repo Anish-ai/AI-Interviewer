@@ -59,7 +59,7 @@ export function ResumeUpload({ onResumeExtracted, isUploaded, resumeData }: Resu
       formData.append('resume', file);
 
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + 10, 90));
+        setUploadProgress(prev => Math.min(prev + 10, 120));
       }, 200);
 
       const response = await fetch('/api/extract-resume', {
@@ -143,8 +143,7 @@ export function ResumeUpload({ onResumeExtracted, isUploaded, resumeData }: Resu
           onChange={handleFileSelect}
           className="hidden"
           ref={fileInputRef}
-        />
-        <Button
+        />        <Button
           onClick={() => fileInputRef.current?.click()}
           variant="outline"
           size="sm"
@@ -153,6 +152,14 @@ export function ResumeUpload({ onResumeExtracted, isUploaded, resumeData }: Resu
           Choose File
         </Button>
       </div>
+      {isUploading && (
+        <div className="space-y-2">
+          <Progress value={uploadProgress} className="w-full" />
+          <p className="text-sm text-center text-gray-600 dark:text-gray-400">
+            {uploadProgress < 100 ? 'Extracting resume data...' : 'Almost done...'}
+          </p>
+        </div>
+      )}
       <div className="flex gap-2">
         <Button
           onClick={() => setShowManualForm(true)}

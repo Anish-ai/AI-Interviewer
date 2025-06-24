@@ -1,15 +1,18 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 import { ChatCanvas } from "@/components/chat-canvas";
 import { SessionModal } from "@/components/session-modal";
+import { HistoryModal } from "@/components/history-modal";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { Loader2 } from "lucide-react";
 import { characters } from "@/data/characters";
 import { interviewTypes } from "@/data/interviewTypes";
 import { useInterviewLogic } from "@/hooks/useInterviewLogic";
 import { useSidebarState } from "@/hooks/useSidebarState";
+import type { InterviewHistoryEntry } from "@/types/history";
 
 export default function MockInterviewAI() {
   const {
@@ -38,6 +41,9 @@ export default function MockInterviewAI() {
     setAnalysisLoading,
     setInterviewStarted,
     setIsRecording,
+    setSelectedCharacter,
+    setSelectedType,
+    setMessages,
     
     // Functions
     handleCharacterSelect,
@@ -48,11 +54,27 @@ export default function MockInterviewAI() {
     handleResumeExtracted,
     initializeSession,
     resetInterviewState,
-    handleSessionModalClose,
-    handleSessionModalRetry,
   } = useInterviewLogic();
 
   const { isSidebarOpen, toggleSidebar } = useSidebarState();
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [interviewHistory, setInterviewHistory] = useState<InterviewHistoryEntry[]>([]);
+
+  const handleSessionModalClose = () => {
+    resetInterviewState();
+  };
+
+  const handleSessionModalRetry = () => {
+    resetInterviewState();
+    setInterviewStarted(true);
+  };
+
+  useEffect(() => {
+    const savedHistory = localStorage.getItem("interviewHistory");
+    if (savedHistory) {
+      setInterviewHistory(JSON.parse(savedHistory));
+    }
+  }, []);
 
   const handleStartInterview = async () => {
     setInterviewStarted(true);
@@ -62,8 +84,49 @@ export default function MockInterviewAI() {
   };
 
   const handleViewHistory = () => {
-    console.log(chatHistory);
+    setIsHistoryOpen(true);
   };
+
+  const handleCloseHistory = () => {
+    setIsHistoryOpen(false);
+  };
+  const replayInterview = (entry: InterviewHistoryEntry) => {
+    setSelectedCharacter(entry.character);
+    setSelectedType(entry.interviewType);
+    if (entry.resumeData) {
+      handleResumeExtracted(entry.resumeData);
+    }
+    // Ensure timestamps are properly deserialized
+    const messagesWithDates = entry.messages.map(msg => ({
+      ...msg,
+      timestamp: new Date(msg.timestamp)
+    }));
+    setMessages(messagesWithDates);
+    setIsHistoryOpen(false);
+    setInterviewStarted(true);
+  };
+
+  // Save interview to history when session completes
+  useEffect(() => {
+    if (sessionComplete && selectedCharacter && selectedType) {      const newEntry: InterviewHistoryEntry = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        character: selectedCharacter,
+        interviewType: selectedType,
+        resumeData,
+        messages: messages.map(msg => ({
+          ...msg,
+          timestamp: msg.timestamp instanceof Date ? msg.timestamp.toISOString() : msg.timestamp
+        })),
+        duration: messages.length * 2 * 60, // Rough estimate: 2 minutes per message
+        score: sessionData?.score
+      };
+
+      const updatedHistory = [newEntry, ...interviewHistory];
+      setInterviewHistory(updatedHistory);
+      localStorage.setItem("interviewHistory", JSON.stringify(updatedHistory));
+    }
+  }, [sessionComplete]);
 
   // Show Start Interview button if not started
   if (!interviewStarted) {
@@ -141,6 +204,13 @@ export default function MockInterviewAI() {
           messages={messages}
           isOpen={isSidebarOpen}
           onToggle={toggleSidebar}
+        />
+
+        <HistoryModal
+          isOpen={isHistoryOpen}
+          onClose={handleCloseHistory}
+          entries={interviewHistory}
+          onReplayInterview={replayInterview}
         />
 
         <ChatCanvas

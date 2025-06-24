@@ -133,4 +133,7 @@ export interface SessionData {
     dominantExpressions: Record<string, number>
     eyeContactPercentage: number
   }
+  messages: Message[];
+  duration: number;
+  score?: number; // Interview performance score (0-100)
 }

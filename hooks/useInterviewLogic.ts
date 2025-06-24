@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Character, InterviewType, Message, SessionData, ResumeData, InterviewCustomization as CustomizationType } from "@/types";
 import type { FaceMetrics } from "@/lib/hooks/useFaceDetection";
+import type { InterviewHistoryEntry } from "@/types/history";
 import { validateResumeData } from "@/types";
 
 export function useInterviewLogic() {
@@ -24,11 +25,27 @@ export function useInterviewLogic() {
     topicFocus: 'mixed',
     purpose: 'general'
   });
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [interviewHistory, setInterviewHistory] = useState<InterviewHistoryEntry[]>([]);
+
+  // Helper functions for message handling
+  const serializeMessage = (message: Message) => ({
+    ...message,
+    timestamp: message.timestamp.toISOString()
+  });
+
+  const deserializeMessage = (message: any): Message => ({
+    ...message,
+    timestamp: new Date(message.timestamp)
+  });
+
+  const serializeMessages = (messages: Message[]) => messages.map(serializeMessage);
+  const deserializeMessages = (messages: any[]) => messages.map(deserializeMessage);
 
   // Store chat history in localStorage
   useEffect(() => {
     if (messages.length > 0) {
-      localStorage.setItem("chatHistory", JSON.stringify(messages));
+      localStorage.setItem("chatHistory", JSON.stringify(serializeMessages(messages)));
       setChatHistory(messages);
     }
   }, [messages]);
@@ -37,8 +54,33 @@ export function useInterviewLogic() {
   useEffect(() => {
     const savedHistory = localStorage.getItem("chatHistory");
     if (savedHistory) {
-      const parsedHistory = JSON.parse(savedHistory);
-      setChatHistory(parsedHistory);
+      try {
+        const parsedHistory = JSON.parse(savedHistory);
+        const deserializedHistory = deserializeMessages(parsedHistory);
+        setChatHistory(deserializedHistory);
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+        setChatHistory([]);
+      }
+    }
+  }, []);
+
+  // Load interview history on component mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem("interviewHistory");
+    if (savedHistory) {
+      try {
+        const parsedHistory = JSON.parse(savedHistory);
+        const deserializedHistory = parsedHistory.map((entry: any) => ({
+          ...entry,
+          messages: deserializeMessages(entry.messages),
+          date: new Date(entry.date).toISOString()
+        }));
+        setInterviewHistory(deserializedHistory);
+      } catch (error) {
+        console.error('Error loading interview history:', error);
+        setInterviewHistory([]);
+      }
     }
   }, []);
 
@@ -366,6 +408,51 @@ export function useInterviewLogic() {
     }
   };
 
+  const saveInterviewToHistory = () => {
+    if (!selectedCharacter || !selectedType) return;
+
+    const newEntry: InterviewHistoryEntry = {
+      id: Date.now().toString(),
+      date: new Date().toISOString(),
+      character: selectedCharacter,
+      interviewType: selectedType,
+      resumeData,
+      messages,
+      duration: messages.length * 2 * 60, // Rough estimate: 2 minutes per message
+      score: sessionData?.score
+    };
+
+    const updatedHistory = [newEntry, ...interviewHistory];
+    setInterviewHistory(updatedHistory);
+    localStorage.setItem("interviewHistory", JSON.stringify(updatedHistory));
+  };
+
+  const handleViewHistory = () => {
+    setHistoryOpen(true);
+  };
+
+  const handleCloseHistory = () => {
+    setHistoryOpen(false);
+  };
+
+  const replayInterview = (entry: InterviewHistoryEntry) => {
+    setSelectedCharacter(entry.character);
+    setSelectedType(entry.interviewType);
+    if (entry.resumeData) {
+      handleResumeExtracted(entry.resumeData);
+    }
+    setMessages(entry.messages);
+    setHistoryOpen(false);
+    setInterviewStarted(true);
+  };
+
+  // Save interview to history when session completes
+  useEffect(() => {
+    if (sessionComplete) {
+      saveInterviewToHistory();
+    }
+  }, [sessionComplete]);
+
   return {
     // State
     selectedCharacter,
@@ -384,18 +471,19 @@ export function useInterviewLogic() {
     resumeData,
     isResumeUploaded,
     interviewCustomization,
+    historyOpen,
+    interviewHistory,
     
     // Actions
     setSelectedCharacter,
     setSelectedType,
-    setIsRecording,
-    setSessionComplete,
-    setCurrentQuestion,
+    setMessages,
     setIsDarkMode,
     setSelectedLanguage,
     setInterviewCustomization,
     setAnalysisLoading,
     setInterviewStarted,
+    setIsRecording,
     
     // Functions
     handleCharacterSelect,
@@ -409,5 +497,8 @@ export function useInterviewLogic() {
     clearResumeState,
     handleSessionModalClose,
     handleSessionModalRetry,
+    handleViewHistory,
+    handleCloseHistory,
+    replayInterview,
   };
-} 
+}
