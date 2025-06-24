@@ -1,6 +1,44 @@
-# AI-Interviewer 
+# AI-Interviewer
 
 A next-generation AI-powered mock interview platform that delivers realistic, interactive interview experiences with dynamic feedback, mood and facial analysis, and personalized question generation based on your resume.
+
+---
+
+## Project Overview
+
+**AI-Interviewer** is a sophisticated mock interview platform built with Next.js and TypeScript. It simulates real interview scenarios using AI-driven interviewers, real-time voice and facial analysis, and personalized question generation from your resume. The platform is designed for job seekers, students, and professionals to practice and improve their interview skills in a realistic, supportive environment.
+
+---
+
+## Tech Stack
+
+**Frontend:**
+- Next.js (App Router)
+- React
+- TypeScript
+- Tailwind CSS (utility-first styling)
+- Radix UI (accessible UI primitives)
+- Lucide Icons (iconography)
+
+**Backend:**
+- Next.js API Routes (serverless functions)
+- Node.js (runtime)
+
+**AI/ML Integrations:**
+- Google Gemini (Natural Language Processing, resume parsing, question generation)
+- Murf AI (real-time voice synthesis)
+- face-api.js (in-browser facial expression and eye contact analysis)
+- @tensorflow/tfjs (underlying ML for face-api.js)
+
+**Tooling & Utilities:**
+- ESLint (linting)
+- Prettier (code formatting)
+- React Hook Form (form management)
+- Zod (schema validation)
+- date-fns (date utilities)
+- Embla Carousel, Recharts, and other UI libraries
+- LocalStorage (session history persistence)
+- Node.js scripts for automation (model download, resume test)
 
 ---
 
@@ -8,24 +46,21 @@ A next-generation AI-powered mock interview platform that delivers realistic, in
 - [Project Overview](#project-overview)
 - [Features](#features)
 - [Architecture](#architecture)
-- [Directory Structure](#directory-structure)
+- [Directory & File Structure](#directory--file-structure)
 - [API Endpoints](#api-endpoints)
 - [Core Components](#core-components)
 - [Custom Hooks](#custom-hooks)
+- [Data Models & Types](#data-models--types)
 - [AI & ML Integrations](#ai--ml-integrations)
-- [Resume Upload Flow](#resume-upload-flow)
+- [Resume Upload & Processing Flow](#resume-upload--processing-flow)
 - [Session Management & History](#session-management--history)
-- [Development & Testing](#development--testing)
-- [Configuration](#configuration)
+- [Static Assets](#static-assets)
+- [Scripts & Utilities](#scripts--utilities)
+- [Development, Setup & Testing](#development-setup--testing)
+- [Configuration & Customization](#configuration--customization)
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
-
----
-
-## Project Overview
-
-**AI-Interviewer** is a sophisticated mock interview platform built with Next.js and TypeScript. It simulates real interview scenarios using AI-driven interviewers, real-time voice and facial analysis, and personalized question generation from your resume. The platform is designed for job seekers, students, and professionals to practice and improve their interview skills in a realistic, supportive environment.
 
 ---
 
@@ -70,7 +105,7 @@ graph TD;
 
 ---
 
-## Directory Structure
+## Directory & File Structure
 
 ```
 AI-Interviewer/
@@ -96,8 +131,21 @@ AI-Interviewer/
 ├── styles/            # Additional CSS
 ├── types/             # TypeScript types and interfaces
 ├── package.json       # Project metadata and dependencies
+├── tsconfig.json      # TypeScript configuration
 └── README.md          # Project documentation
 ```
+
+### Notable Files & Directories
+- **app/page.tsx**: Main entry point, manages interview state, layout, and session logic.
+- **app/api/extract-resume/route.ts**: API endpoint for extracting structured data from uploaded resumes using Gemini AI.
+- **app/api/process-message/route.ts**: API endpoint for processing user messages, generating AI interviewer responses, and synthesizing audio with Murf AI.
+- **components/**: All UI components, including chat, resume upload, video capture, modals, and a large set of reusable UI primitives in `components/ui/`.
+- **data/**: Static data for interviewer characters, interview types, and translations.
+- **hooks/**: Custom React hooks for interview logic, sidebar state, notifications, and mobile detection.
+- **lib/**: Integrations for Gemini AI, Murf AI, and face detection logic.
+- **public/**: Static assets, including face-api.js models, avatars, and audio files.
+- **scripts/**: Node.js scripts for downloading models and testing resume upload.
+- **types/**: TypeScript types and interfaces for all core data models.
 
 ---
 
@@ -154,7 +202,7 @@ AI-Interviewer/
 - **`video-capture.tsx`**: Webcam capture, face detection, and real-time feedback.
 - **`sidebar.tsx`**: Character and interview type selection, session controls.
 - **`session-modal.tsx`, `SessionSummaryModal.tsx`, `history-modal.tsx`**: Session management, feedback, and history replay.
-- **`ui/`**: Reusable UI primitives (buttons, dialogs, forms, etc.) built on Radix UI.
+- **`ui/`**: 40+ reusable UI primitives (buttons, dialogs, forms, tables, charts, etc.) built on Radix UI and Tailwind CSS.
 
 ---
 
@@ -163,8 +211,29 @@ AI-Interviewer/
 - **`useInterviewLogic`**: Centralized state and logic for interview flow, message handling, and session management.
 - **`useFaceDetection`**: Loads face-api.js models, processes video frames, and extracts facial metrics (expressions, eye contact, confidence).
 - **`useSidebarState`**: Sidebar open/close state management.
-- **`useInterview`**: (If present) Additional interview state abstraction.
+- **`useInterview`**: Additional interview state abstraction.
 - **`use-toast`, `use-mobile`**: UI utility hooks for notifications and responsive design.
+
+---
+
+## Data Models & Types
+
+### Interviewer Characters (`data/characters.ts`)
+- **Jane Doe** (Tech Lead, frontend architecture)
+- **Mike Chen** (HR Manager, behavioral interviews)
+- **Sarah Wilson** (Product Manager, case study interviews)
+
+### Interview Types (`data/interviewTypes.ts`)
+- **Technical**: Coding challenges and system design
+- **Behavioral**: Situational and experience-based questions
+- **Case Study**: Problem-solving and analytical thinking
+
+### Translations (`data/translations.ts`)
+- English, Spanish, French, Hindi (easily extensible)
+
+### Main Types (`types/index.ts`)
+- `Character`, `InterviewType`, `InterviewCustomization`, `Message`, `ResumeData`, `SessionData`, `InterviewHistoryEntry`, etc.
+- Includes validation helpers for resume data.
 
 ---
 
@@ -176,7 +245,7 @@ AI-Interviewer/
 
 ---
 
-## Resume Upload Flow
+## Resume Upload & Processing Flow
 
 1. **User uploads resume** (PDF, DOC, DOCX, TXT) via the UI.
 2. **Frontend** sends the file to `/api/extract-resume`.
@@ -195,7 +264,24 @@ AI-Interviewer/
 
 ---
 
-## Development & Testing
+## Static Assets
+
+- **public/models/**: Pre-trained face-api.js models for face detection, landmark, and expression analysis.
+- **public/avatars/**: Interviewer avatar images (e.g., `female_laptop.jpg`, `male_talking.jpg`, `female_mic.jpg`).
+- **public/audio/**: Audio files generated by Murf AI for interview responses.
+- **public/sample-resume.txt**: Example resume for testing and demonstration.
+- **public/placeholder-*.{png,svg,jpg}**: Placeholder images for UI.
+
+---
+
+## Scripts & Utilities
+
+- **scripts/download-models.js**: Downloads all required face-api.js models to `public/models`.
+- **scripts/test-resume-upload.js**: Tests the resume extraction API with a sample resume, including validation logic.
+
+---
+
+## Development, Setup & Testing
 
 ### Prerequisites
 - Node.js v18+
@@ -240,40 +326,75 @@ npm run test-resume
 
 ---
 
-## Configuration
+## Configuration & Customization
 
 - **API Keys**: Required for Gemini and Murf. Place them in `.env.local`.
 - **Model Files**: Downloaded to `public/models` for face-api.js.
 - **Customizing Characters/Interview Types**: Edit `data/characters.ts` and `data/interviewTypes.ts`.
 - **Translations**: Add/edit languages in `data/translations.ts`.
+- **TypeScript Config**: See `tsconfig.json` for strict type settings and path aliases.
 
 ---
 
 ## Contributing
 
-Contributions are welcome! To add features, fix bugs, or improve documentation:
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/YourFeature`)
-3. Commit your changes (`git commit -m 'Add YourFeature'`)
-4. Push to your branch (`git push origin feature/YourFeature`)
-5. Open a Pull Request
+Contributions are welcome! To add features, fix bugs, or improve documentation, please follow these steps:
 
-For major changes, please open an issue first to discuss your proposal.
+1. **Fork the repository**
+2. **Clone your fork**
+   ```bash
+   git clone https://github.com/yourusername/ai-interviewer.git
+   cd ai-interviewer
+   ```
+3. **Create a feature branch**
+   ```bash
+   git checkout -b feature/YourFeature
+   ```
+4. **Make your changes**
+   - Follow the existing code style (TypeScript, Prettier, ESLint)
+   - Add or update tests if applicable
+   - Update documentation as needed
+5. **Commit your changes**
+   ```bash
+   git commit -m 'Add YourFeature'
+   ```
+6. **Push to your branch**
+   ```bash
+   git push origin feature/YourFeature
+   ```
+7. **Open a Pull Request**
+   - Go to the original repository on GitHub
+   - Click "Compare & pull request"
+   - Fill in the PR template and describe your changes
+
+**Major changes:**
+- For large features or breaking changes, please open an issue first to discuss your proposal with the maintainers.
+
+**Code style:**
+- Use TypeScript and follow the existing project conventions
+- Run `npm run lint` and `npm run format` before submitting
+- Write clear, descriptive commit messages
+
+**Questions or Issues?**
+- Open an [issue](https://github.com/yourusername/ai-interviewer/issues) for bugs, feature requests, or questions.
+
+Thank you for contributing to AI-Interviewer!
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
 ---
 
 ## Acknowledgments
 
-- [Google Gemini AI](https://ai.google.dev/) for natural language processing
-- [Murf AI](https://murf.ai/) for voice synthesis
-- [face-api.js](https://github.com/justadudewhohacks/face-api.js/) for facial expression analysis
-- [Radix UI](https://www.radix-ui.com/), [Tailwind CSS](https://tailwindcss.com/), [Lucide Icons](https://lucide.dev/) for UI
-- The open-source community for tools and inspiration
+We would like to thank the following individuals and organizations for their contributions to AI-Interviewer:
 
----
+- **Google Gemini**: For providing the natural language processing and resume parsing capabilities.
+- **Murf AI**: For the real-time voice synthesis technology.
+- **face-api.js**: For the facial expression and eye contact analysis.
+- **@tensorflow/tfjs**: For the underlying machine learning framework.
+
+Thank you for your support and contributions!
