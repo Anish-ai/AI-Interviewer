@@ -33,7 +33,6 @@ interface ChatCanvasProps {
   onVoiceInput: (transcript: string) => void;
   currentQuestion: number;
   totalQuestions: number;
-  sidebarCollapsed: boolean;
   onAnalysis: () => void;
   onFaceMetricsUpdate?: (metrics: FaceMetrics) => void;
 }
@@ -47,7 +46,6 @@ export function ChatCanvas({
   onVoiceInput,
   currentQuestion,
   totalQuestions,
-  sidebarCollapsed,
   onAnalysis,
   onFaceMetricsUpdate,
 }: ChatCanvasProps) {
@@ -183,12 +181,12 @@ export function ChatCanvas({
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-gradient-to-br from-white/30 to-gray-50/30 dark:from-gray-800/30 dark:to-gray-900/30 ml-16 md:ml-80 h-[calc(100vh-4rem)] overflow-hidden">
+    <div className="flex-1 flex flex-col bg-gradient-to-br from-white/30 to-gray-50/30 dark:from-gray-800/30 dark:to-gray-900/30 lg:ml-80 h-[calc(100vh-4rem)] overflow-hidden">
       {/* Chat Header - Fixed */}
-      <div className="flex-none px-4 py-2.5 border-b border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+      <div className="flex-none px-3 lg:px-4 py-2 lg:py-2.5 border-b border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-white">
               {getSessionTitle()}
             </h2>
             {selectedCharacter && selectedType && (
@@ -198,7 +196,7 @@ export function ChatCanvas({
                     Question {currentQuestion} of {totalQuestions}
                   </p>
                 </div>
-                <div className="h-1 w-24 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-1 w-16 lg:w-24 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-[#E07A5F] transition-all duration-500 ease-out"
                     style={{
@@ -215,10 +213,10 @@ export function ChatCanvas({
                 onClick={onAnalysis}
                 variant="outline"
                 size="sm"
-                className="gap-1.5 px-3 py-1.5 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-[#E07A5F]/50 shadow-sm hover:shadow-md transition-all duration-200"
+                className="gap-1.5 px-2 lg:px-3 py-1 lg:py-1.5 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-[#E07A5F]/50 shadow-sm hover:shadow-md transition-all duration-200"
               >
-                <BarChart2 className="w-3.5 h-3.5" />
-                <span className="text-sm">Analysis</span>
+                <BarChart2 className="w-3 lg:w-3.5 h-3 lg:h-3.5" />
+                <span className="text-xs lg:text-sm">Analysis</span>
               </Button>
             )}
           </div>
@@ -335,9 +333,9 @@ export function ChatCanvas({
         </div>
 
         {/* Video Capture and Controls - Fixed */}
-        <div className="w-80 border-l border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm flex flex-col">
+        <div className="w-full lg:w-80 border-l border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm flex flex-col">
           {/* Video Capture */}
-          <div className="flex-none p-3 border-b border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex-none p-2 lg:p-3 border-b border-gray-200/50 dark:border-gray-700/50">
             <VideoCapture
               onMetricsUpdate={onFaceMetricsUpdate}
               className="w-full rounded-xl overflow-hidden shadow-lg"
@@ -345,22 +343,22 @@ export function ChatCanvas({
           </div>
 
           {/* Control Bar */}
-          <div className="flex-none p-3 flex flex-col justify-end">
-            <div className="flex items-center justify-center gap-3">
+          <div className="flex-none p-2 lg:p-3 flex flex-col justify-end">
+            <div className="flex items-center justify-center gap-2 lg:gap-3">
               <Button
                 onClick={handleRecordToggle}
                 disabled={!selectedCharacter || !selectedType}
-                className={`w-14 h-14 rounded-full transition-all duration-300 ${
+                className={`w-12 h-12 lg:w-14 lg:h-14 rounded-full transition-all duration-300 ${
                   isRecording
                     ? "bg-[#E07A5F] hover:bg-[#E07A5F]/90 scale-110 shadow-lg shadow-[#E07A5F]/25"
                     : "bg-white hover:bg-gray-50 border-2 border-gray-200 hover:border-[#E07A5F]/50 shadow-md hover:shadow-lg"
                 }`}
               >
                 {isRecording ? (
-                  <MicOff className="w-5 h-5 text-white" />
+                  <MicOff className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
                 ) : (
                   <Mic
-                    className={`w-5 h-5 ${
+                    className={`w-4 h-4 lg:w-5 lg:h-5 ${
                       isRecording ? "text-white" : "text-[#56707F]"
                     }`}
                   />
@@ -371,9 +369,9 @@ export function ChatCanvas({
                 variant="ghost"
                 size="icon"
                 onClick={() => setSettingsOpen((v) => !v)}
-                className="w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                className="w-8 h-8 lg:w-10 lg:h-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
               >
-                <Settings className="w-4 h-4" />
+                <Settings className="w-3 h-3 lg:w-4 lg:h-4" />
               </Button>
             </div>
 

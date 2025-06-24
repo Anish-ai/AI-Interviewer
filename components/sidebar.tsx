@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight, History, Settings, Users, List, Check, Plus } from "lucide-react";
+import { History, Settings, Users, List, Check, Plus, Menu, X } from "lucide-react";
 import type { Character, InterviewType } from "@/types";
 import { useState } from "react";
 import {
@@ -20,12 +20,12 @@ interface SidebarProps {
   selectedType: InterviewType | null;
   onCharacterSelect: (character: Character) => void;
   onTypeSelect: (type: InterviewType) => void;
-  collapsed: boolean;
-  onToggleCollapse: () => void;
   onResetInterview: () => void;
   messages?: any[];
   onNewInterview: () => void;
   onViewHistory: () => void;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
 export function Sidebar({
@@ -35,85 +35,84 @@ export function Sidebar({
   selectedType,
   onCharacterSelect,
   onTypeSelect,
-  collapsed,
-  onToggleCollapse,
   onResetInterview,
   messages = [],
   onNewInterview,
   onViewHistory,
+  isOpen,
+  onToggle,
 }: SidebarProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [theme, setTheme] = useState("light");
   const [language, setLanguage] = useState("en");
 
-  const isOpen = !collapsed;
-
   return (
-    <div
-      className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-50 ${
-        isOpen ? "w-80" : "w-16"
-      }`}
-    >
-      <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            {isOpen && (
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onToggle}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div
+        className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-50 ${
+          isOpen ? "w-80 translate-x-0" : "w-0 -translate-x-full lg:w-80 lg:translate-x-0"
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
               <h1 className="text-xl font-bold text-[#56707F]">MockInterviewAI</h1>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onToggleCollapse()}
-              className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
-            >
-              {isOpen ? (
-                <ChevronLeft className="w-5 h-5 text-[#56707F]" />
-              ) : (
-                <ChevronRight className="w-5 h-5 text-[#56707F]" />
-              )}
-            </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggle}
+                className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 lg:hidden"
+              >
+                <X className="w-5 h-5 text-[#56707F]" />
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {/* Content */}
-        <ScrollArea className="flex-1">
-          <div className="p-4 space-y-6">
-            {/* Characters Section */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Users className="w-5 h-5 text-[#56707F]" />
-                {isOpen && (
+          {/* Content */}
+          <ScrollArea className="flex-1">
+            <div className="p-4 space-y-6">
+              {/* Characters Section */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="w-5 h-5 text-[#56707F]" />
                   <h2 className="text-sm font-semibold text-[#56707F]">
                     Interviewers
                   </h2>
-                )}
-              </div>
-              <div className="space-y-2">
-                {characters.map((character) => (
-                  <button
-                    key={character.id}
-                    onClick={() => onCharacterSelect(character)}
-                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all duration-200 ${
-                      selectedCharacter?.id === character.id
-                        ? "bg-[#E07A5F]/10 text-[#E07A5F]"
-                        : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    <div className="relative">
-                      <img
-                        src={character.avatarAnimated || character.avatar}
-                        alt={character.name}
-                        className="w-10 h-10 rounded-full object-cover border-2 border-[#E07A5F] bg-white shadow-sm"
-                      />
-                      {selectedCharacter?.id === character.id && (
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#E07A5F] rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
-                          <Check className="w-3 h-3 text-white" />
-                        </div>
-                      )}
-                    </div>
-                    {isOpen && (
+                </div>
+                <div className="space-y-2">
+                  {characters.map((character) => (
+                    <button
+                      key={character.id}
+                      onClick={() => onCharacterSelect(character)}
+                      className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all duration-200 ${
+                        selectedCharacter?.id === character.id
+                          ? "bg-[#E07A5F]/10 text-[#E07A5F]"
+                          : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      <div className="relative">
+                        <img
+                          src={character.avatarAnimated || character.avatar}
+                          alt={character.name}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-[#E07A5F] bg-white shadow-sm"
+                        />
+                        {selectedCharacter?.id === character.id && (
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#E07A5F] rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </div>
                       <div className="flex-1 text-left">
                         <div className="font-medium text-gray-900 dark:text-white">
                           {character.name}
@@ -122,37 +121,33 @@ export function Sidebar({
                           {character.role}
                         </div>
                       </div>
-                    )}
-                  </button>
-                ))}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Interview Types Section */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <List className="w-5 h-5 text-[#56707F]" />
-                {isOpen && (
+              {/* Interview Types Section */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <List className="w-5 h-5 text-[#56707F]" />
                   <h2 className="text-sm font-semibold text-[#56707F]">
                     Interview Types
                   </h2>
-                )}
-              </div>
-              <div className="space-y-2">
-                {interviewTypes.map((type) => (
-                  <button
-                    key={type.id}
-                    onClick={() => onTypeSelect(type)}
-                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all duration-200 ${
-                      selectedType?.id === type.id
-                        ? "bg-[#E07A5F]/10 text-[#E07A5F]"
-                        : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-[#56707F]/10 flex items-center justify-center">
-                      {type.icon}
-                    </div>
-                    {isOpen && (
+                </div>
+                <div className="space-y-2">
+                  {interviewTypes.map((type) => (
+                    <button
+                      key={type.id}
+                      onClick={() => onTypeSelect(type)}
+                      className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all duration-200 ${
+                        selectedType?.id === type.id
+                          ? "bg-[#E07A5F]/10 text-[#E07A5F]"
+                          : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-[#56707F]/10 flex items-center justify-center">
+                        {type.icon}
+                      </div>
                       <div className="flex-1 text-left">
                         <div className="font-medium text-gray-900 dark:text-white">
                           {type.name}
@@ -161,17 +156,15 @@ export function Sidebar({
                           {type.description}
                         </div>
                       </div>
-                    )}
-                  </button>
-                ))}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </ScrollArea>
+          </ScrollArea>
 
-        {/* Footer */}
-        <div className="flex-none p-4 border-t border-gray-200/50 dark:border-gray-700/50">
-          {isOpen && (
+          {/* Footer */}
+          <div className="flex-none p-4 border-t border-gray-200/50 dark:border-gray-700/50">
             <div className="flex flex-col gap-3">
               <Button
                 onClick={onNewInterview}
@@ -193,7 +186,7 @@ export function Sidebar({
                 <span>AI Ready</span>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -268,6 +261,6 @@ export function Sidebar({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
